@@ -1,103 +1,665 @@
-import Image from "next/image";
+"use client";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Inter } from "next/font/google";
+import Link from "next/link";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  // --- Inloggningsstatus ---
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  useEffect(() => {
+    const session =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem("bw_session")
+        : null;
+    setIsLoggedIn(!!session);
+  }, []);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  // --- Popup states ---
+  const [showAbout, setShowAbout] = useState(false);
+  const [showContact, setShowContact] = useState(false);
+  const [showPartners, setShowPartners] = useState(false);
+  const [formSent, setFormSent] = useState(false);
+
+  // --- Chat state ---
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [started, setStarted] = useState(false);
+
+  // --- UI animation / visuals state ---
+  const [offsetY, setOffsetY] = useState(0);
+  const [currentTextIndex, setCurrentTextIndex] = useState(0);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const ticking = useRef(false);
+
+  // --- Textloop vänster ---
+  const texts = [
+    "Bygg din drömdator med Erik 🔆",
+    "Låt AI hjälpa dig välja rätt komponenter 💡",
+    "Spara pengar med smartare val ⚙️",
+    "Allt du behöver — i ett verktyg 🔍",
+  ];
+
+  // --- Bilder höger ---
+  const images = ["/cpu.png", "/gpu.png", "/motherboard.png"];
+
+  // --- Relevanta nyckelord ---
+  const relevantKeywords = [
+    "dator", "pc", "processor", "cpu", "gpu", "grafikkort", "ram", "ssd", "moderkort",
+    "kylning", "psu", "nätaggregat", "bygga", "uppgradera", "spel", "fps"
+  ];
+
+  // --- Textrotation ---
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTextIndex((prev) => (prev + 1) % texts.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // --- Bildrotation ---
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % images.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // --- Parallax ---
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!ticking.current) {
+        window.requestAnimationFrame(() => {
+          setOffsetY(window.scrollY);
+          ticking.current = false;
+        });
+        ticking.current = true;
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // --- Första meddelandet ---
+  useEffect(() => {
+    setMessages([
+      {
+        role: "assistant",
+        content:
+          "Hej! Jag heter Erik ☀️ Jag hjälper dig bygga, uppgradera eller förstå din dator — vad vill du börja med?",
+      },
+    ]);
+  }, []);
+
+  // --- Markera komponenter ---
+  const highlightComponents = (text) => {
+    const parts = text.split(
+      /(\b(?:cpu|gpu|ram|minne|ssd|moderkort|chassi|psu|grafikkort|kylning)\b)/gi
+    );
+    return parts.map((part, i) => {
+      const lower = part.toLowerCase();
+      if (["cpu", "gpu", "ram", "ssd"].includes(lower)) {
+        return <span key={i} className="font-bold text-[#f97316]">{part}</span>;
+      } else if (
+        ["moderkort", "chassi", "psu", "grafikkort", "kylning"].includes(lower)
+      ) {
+        return <span key={i} className="font-bold text-[#f59e0b]">{part}</span>;
+      } else {
+        return part;
+      }
+    });
+  };
+
+  // --- Relevans ---
+  const isRelevant = (text) => {
+    const lower = text.toLowerCase();
+    return relevantKeywords.some((word) => lower.includes(word));
+  };
+  // --- Skicka meddelande ---
+  const sendMessage = async (messageText) => {
+    if (!messageText.trim()) return;
+    const userMessage = { role: "user", content: messageText };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
+
+    if (!isRelevant(messageText)) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            "Jag kan tyvärr bara hjälpa till med datorrelaterade frågor just nu 💻",
+        },
+      ]);
+      return;
+    }
+
+    setLoading(true);
+    setStarted(true);
+
+    try {
+      const lowerMsg = messageText.toLowerCase();
+      const priceMatch = lowerMsg.match(
+        /(rtx\s*\d{3,4}|rx\s*\d{3,4}|i[3579]-?\d{4,5}k?|ryzen\s*\d\s*\d{3,4})/i
+      );
+
+      if (lowerMsg.includes("pris") || lowerMsg.includes("kostar")) {
+        if (priceMatch) {
+          const product = priceMatch[0].trim();
+          try {
+            const priceRes = await fetch(`/api/price-check`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ query: product }),
+            });
+            const priceData = await priceRes.json();
+            if (priceData?.prices?.length) {
+              const cheapest = priceData.prices[0];
+              const highest =
+                priceData.prices[priceData.prices.length - 1];
+              setMessages((prev) => [
+                ...prev,
+                {
+                  role: "assistant",
+                  content: `💰 ${product.toUpperCase()} hittades från ${cheapest.price} till ${highest.price} hos ${priceData.prices
+                    .slice(0, 3)
+                    .map((p) => p.store)
+                    .join(", ")}.`,
+                },
+              ]);
+              setLoading(false);
+              return;
+            }
+          } catch (err) {
+            console.error("Fel vid prisförfrågan:", err);
+          }
+        }
+      }
+
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: messageText }),
+      });
+      const data = await res.json();
+
+      const cleanReply = data.reply
+        .replace(/\n{2,}/g, "\n")
+        .split("\n")
+        .map((line, i) => (
+          <p key={i} className="mb-3 leading-relaxed">
+            {highlightComponents(line)}
+          </p>
+        ));
+
+      setMessages((prev) => [...prev, { role: "assistant", content: cleanReply }]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: <p className="leading-relaxed">Något gick fel — försök igen om en stund.</p>,
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- Enter skickar ---
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage(input);
+    }
+  };
+
+  // --- Popup-animationer ---
+  const backdropVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1 },
+    exit: { opacity: 0 },
+  };
+
+  const cardVariants = {
+    hidden: { opacity: 0, scale: 0.9 },
+    visible: { opacity: 1, scale: 1 },
+    exit: { opacity: 0, scale: 0.9 },
+  };
+
+  const closeAllPopups = () => {
+    setShowAbout(false);
+    setShowContact(false);
+    setShowPartners(false);
+    setFormSent(false);
+  };
+
+  return (
+    <main
+      className={`${inter.className} min-h-screen text-[#1e1e24] flex flex-col items-center p-4 relative overflow-x-hidden`}
+      style={{ background: "#ffffff" }}
+    >
+      {/* --- Bakgrund --- */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10 will-change-transform"
+        style={{
+          transform: `translate3d(0, ${offsetY * 0.15}px, 0)`,
+          transition: "transform 0.1s ease-out",
+        }}
+      >
+        <img
+          src="/circuit-bg.png"
+          alt=""
+          className="w-full h-full object-cover"
+          style={{
+            opacity: 0.06,
+            filter: "grayscale(80%) contrast(90%) brightness(102%)",
+          }}
+        />
+      </div>
+
+      {/* --- Rörlig text vänster --- */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={texts[currentTextIndex]}
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 10 }}
+          transition={{ duration: 1 }}
+          className="fixed left-[6%] top-1/2 -translate-y-1/2 text-[#555] text-2xl md:text-3xl font-semibold max-w-[320px] pointer-events-none z-0 select-none"
+          style={{
+            lineHeight: 1.5,
+            textShadow: "0 0 5px rgba(249, 115, 22, 0.25)",
+          }}
+        >
+          {texts[currentTextIndex]}
+        </motion.div>
+      </AnimatePresence>
+
+      {/* --- Header --- */}
+      <header className="fixed top-1 left-0 right-0 z-50">
+        <div
+          className="w-full flex items-center justify-between px-6 h-16 border-b border-[#fcd34d]"
+          style={{
+            background: "#fef3c7",
+            backdropFilter: "blur(8px)",
+            boxShadow: "0 4px 20px rgba(249, 115, 22, 0.15)",
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <img
+              src="/logga.png"
+              alt="BuildWise logotyp"
+              className="w-14 h-14 rounded-xl drop-shadow-[0_0_10px_rgba(249,115,22,0.4)]"
+              style={{ marginLeft: "10px", marginTop: "2px", objectFit: "contain" }}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <div className="flex flex-col">
+              <h1 className="text-[#1e1e24] text-2xl font-bold leading-tight">
+                BuildWise
+              </h1>
+              <span className="text-[13px] text-[#f97316] hidden sm:inline">
+                AI-rådgivning för datorbygge
+              </span>
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <nav className="hidden md:flex items-center gap-6">
+            <button onClick={() => setShowAbout(true)} className="text-[#333] hover:text-[#f59e0b] transition">
+              Om oss
+            </button>
+            <button onClick={() => setShowContact(true)} className="text-[#333] hover:text-[#f59e0b] transition">
+              Kontakt
+            </button>
+            <button onClick={() => setShowPartners(true)} className="text-[#333] hover:text-[#f59e0b] transition">
+              Partners
+            </button>
+            <Link href="/blogg" className="text-[#333] hover:text-[#f59e0b] transition">
+              Blogg
+            </Link>
+
+            {isLoggedIn ? (
+              <a
+                href="/konto"
+                className="px-4 py-2 bg-linear-to-r from-[#f59e0b] to-[#f97316] hover:from-[#f97316] hover:to-[#ea580c] text-white rounded-xl font-semibold transition shadow-[0_0_15px_rgba(249,115,22,0.25)]"
+              >
+                Min sida
+              </a>
+            ) : (
+              <a
+                href="/login"
+                className="px-4 py-2 bg-linear-to-r from-[#f59e0b] to-[#f97316] hover:from-[#f97316] hover:to-[#ea580c] text-white rounded-xl font-semibold transition shadow-[0_0_15px_rgba(249,115,22,0.25)]"
+              >
+                Logga in
+              </a>
+            )}
+          </nav>
+
+          <div className="md:hidden text-[#333]">
+            <button onClick={() => setShowAbout(true)} className="hover:text-[#f59e0b] transition">
+              Meny
+            </button>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+      </header>
+
+      {/* Spacer */}
+      <div style={{ height: 64 }} />
+      {/* --- Hero Sektion med knappar --- */}
+      <section className="relative flex flex-col items-center justify-center flex-1 text-center mt-8">
+        <img
+          src="/hero-pc.png"
+          alt="Hero PC"
+          className="w-[480px] max-w-[90%] rounded-3xl shadow-[0_8px_25px_rgba(249,115,22,0.15)]"
+        />
+
+        <div className="mt-8 flex flex-wrap justify-center gap-4">
+          {/* Bygg din dator */}
+          <Link
+            href="/build-setup"
+            className="px-6 py-3 bg-linear-to-r from-[#f59e0b] to-[#f97316] hover:from-[#f97316] hover:to-[#ea580c] text-white rounded-xl font-semibold transition shadow-[0_0_20px_rgba(249,115,22,0.2)]"
+          >
+            Bygg din dator
+          </Link>
+
+          {/* Uppgradera dator */}
+          <button
+            onClick={() => {
+              setStarted(true);
+              window.scrollTo({
+                top: document.body.scrollHeight,
+                behavior: "smooth",
+              });
+            }}
+            className="px-6 py-3 bg-linear-to-r from-[#f59e0b] to-[#f97316] hover:from-[#f97316] hover:to-[#ea580c] text-white rounded-xl font-semibold transition shadow-[0_0_20px_rgba(249,115,22,0.2)]"
+          >
+            Uppgradera dator
+          </button>
+
+          {/* Skapa din dator */}
+          <Link
+            href="/build-ai"
+            className="px-6 py-3 bg-linear-to-r from-[#f59e0b] via-[#f97316] to-[#fb923c] hover:from-[#f97316] hover:to-[#ea580c] text-white rounded-xl font-semibold shadow-[0_0_25px_rgba(249,115,22,0.3)] transition"
+          >
+            Skapa din dator
+          </Link>
+        </div>
+      </section>
+
+      {/* --- Chat (visas när started === true) --- */}
+      {started && (
+        <section className="flex flex-col items-center w-full flex-1 mt-4 mb-10 px-4">
+          <div className="w-full max-w-4xl">
+            <motion.div
+              id="start"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="bg-[#fff9f2] border border-[#fde68a] rounded-t-3xl p-5 text-center shadow-[0_4px_15px_rgba(249,115,22,0.1)]"
+            >
+              <h2 className="text-3xl font-bold mb-2 text-[#1e1e24]">
+                Få hjälp med ditt bygge direkt av Erik ☀️
+              </h2>
+              <p className="text-[#4f4f57] max-w-2xl mx-auto text-sm">
+                Ställ frågor, be om rekommendationer eller få prisförslag – Erik är redo att hjälpa dig.
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="bg-[#ffffff] border border-[#fde68a] border-t-0 p-6 rounded-b-3xl shadow-[0_12px_40px_rgba(249,115,22,0.08)] flex flex-col justify-between"
+              style={{ height: "65vh" }}
+            >
+              {/* Meddelanden */}
+              <div className="flex-1 overflow-y-auto mb-4 space-y-3 px-1">
+                <AnimatePresence>
+                  {messages.map((msg, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.25 }}
+                      className={`flex ${
+                        msg.role === "user" ? "justify-end" : "justify-start"
+                      }`}
+                    >
+                      <div
+                        className={`p-3 rounded-xl max-w-[75%] leading-relaxed ${
+                          msg.role === "user"
+                            ? "bg-linear-to-r from-[#f59e0b] to-[#f97316] text-white self-end"
+                            : "bg-[#fff7ed] text-[#1e1e24] border border-[#fde68a]"
+                        } shadow-sm`}
+                      >
+                        {msg.role === "assistant" ? (
+                          <div className="flex items-start gap-2">
+                            <span className="text-xl">🤖</span>
+                            <div className="flex flex-col">{msg.content}</div>
+                          </div>
+                        ) : (
+                          msg.content
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+
+                {/* Laddningsbubblor */}
+                {loading && (
+                  <div className="flex justify-start items-center gap-2">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-[#f59e0b] rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-[#f59e0b] rounded-full animate-bounce [animation-delay:-.2s]"></div>
+                      <div className="w-2 h-2 bg-[#f59e0b] rounded-full animate-bounce [animation-delay:-.4s]"></div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Inputfält */}
+              <div className="flex gap-2 mt-2">
+                <textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Skriv något till Erik..."
+                  rows="1"
+                  className="flex-1 p-3 bg-white border border-[#fcd34d] rounded-xl text-[#1e1e24] placeholder-[#a1a1aa] focus:outline-none focus:ring-2 focus:ring-[#fbbf24]/40 resize-none"
+                />
+                <button
+                  onClick={() => sendMessage(input)}
+                  className="px-5 py-3 bg-linear-to-r from-[#f59e0b] to-[#f97316] hover:from-[#f97316] hover:to-[#ea580c] text-white rounded-xl font-semibold border border-[#fcd34d] transition shadow-[0_0_10px_rgba(249,115,22,0.2)]"
+                >
+                  Skicka
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+      )}
+      {/* --- Info-sektionerna längst ner --- */}
+      <div className="w-full max-w-4xl mt-12 space-y-8">
+        {[
+          {
+            id: "kompatibilitet",
+            title: "Kompatibilitetskontroll",
+            text: "Osäker på om dina komponenter passar ihop? Snart kan du mata in dina delar och få en AI-kontroll som verifierar kompatibilitet mellan CPU, moderkort, RAM och GPU – så du slipper gissa.",
+          },
+          {
+            id: "om-oss",
+            title: "Om oss",
+            text: "BuildWise kombinerar AI med expertkunskap för att göra datorbygge enkelt, roligt och tryggt. Vi tror att alla ska kunna bygga sin drömdator – utan att oroa sig för felköp.",
+          },
+          {
+            id: "kontakt",
+            title: "Kontakt",
+            text: "Har du frågor, feedback eller vill samarbeta? Hör av dig till oss på hello@buildwise.ai.",
+          },
+        ].map((section) => (
+          <section
+            key={section.id}
+            id={section.id}
+            className="bg-[#fffaf2] text-[#1e1e24] border border-[#fde68a] rounded-3xl p-8 shadow-[0_4px_15px_rgba(249,115,22,0.08)]"
+          >
+            <h3 className="text-2xl font-bold mb-3 text-[#ea580c]">
+              {section.title}
+            </h3>
+            <p className="text-[#4f4f57]/90">{section.text}</p>
+          </section>
+        ))}
+      </div>
+
+      {/* --- Footer --- */}
+      <footer className="mt-16 text-center text-[#a1a1aa] pb-8">
+        © {new Date().getFullYear()} BuildWise ☀️ Alla rättigheter förbehållna.
       </footer>
-    </div>
+
+      {/* --- Popups (Om oss / Kontakt / Partners) --- */}
+      <AnimatePresence>
+        {(showAbout || showContact || showPartners) && (
+          <motion.div
+            className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50 p-4"
+            variants={backdropVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+          >
+            <motion.div
+              variants={cardVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              transition={{ duration: 0.25 }}
+              className="bg-[#ffffff] text-[#1e1e24] rounded-3xl shadow-2xl w-full max-w-lg p-8 relative border border-[#fde68a]"
+            >
+              {/* Stäng-knapp */}
+              <button
+                onClick={closeAllPopups}
+                className="absolute top-4 right-4 text-[#f59e0b] hover:text-[#ea580c] text-xl"
+              >
+                ✕
+              </button>
+
+              {/* Om oss popup */}
+              {showAbout && (
+                <>
+                  <h2 className="text-2xl font-bold mb-4 text-[#f97316]">
+                    Om oss
+                  </h2>
+                  <p className="text-[#3a3a40] leading-relaxed">
+                    BuildWise startades av <strong>Oscar Petersson</strong> och{" "}
+                    <strong>Victor Rosengren</strong>. Idén kom när Oscar
+                    försökte uppgradera sin egen dator, och Victor ville köpa en
+                    ny men inte visste var han skulle börja. Vi insåg hur mycket
+                    tid som går åt till att jämföra delar, priser och
+                    kompatibilitet – och hur lätt det är att göra felköp.
+                  </p>
+                  <p className="text-[#3a3a40] leading-relaxed mt-4">
+                    Där föddes tanken om en AI-rådgivare som faktiskt kan lyssna
+                    på dina behov, din budget och ditt syfte – och sen
+                    rekommendera en dator som passar just dig. Vårt mål är att
+                    göra datorbygge enkelt, tryggt och roligt. Oavsett om du är
+                    helt ny eller entusiast.
+                  </p>
+                  <p className="text-[#3a3a40] leading-relaxed mt-4">
+                    Framåt bygger vi fler smarta funktioner: automatisk
+                    kompatibilitetskontroll, prisbevakning, FPS-prognoser i
+                    riktiga spel och personliga uppgraderingsplaner för din
+                    nuvarande PC. Vi vill att du alltid ska känna dig säker på
+                    nästa köp.
+                  </p>
+                  <p className="text-[#4f4f57]/80 italic mt-4">
+                    Det började som ett litet projekt mellan två vänner – och
+                    resten är historia. 💻
+                  </p>
+                </>
+              )}
+
+              {/* Kontakt popup */}
+              {showContact && (
+                <>
+                  {!formSent ? (
+                    <>
+                      <h2 className="text-2xl font-bold mb-4 text-[#f97316]">
+                        Kontakt
+                      </h2>
+                      <p className="text-[#3a3a40] mb-4 leading-relaxed">
+                        Har du frågor, feedback eller vill samarbeta?
+                        Skriv till oss här så återkommer vi så snart vi kan.
+                      </p>
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          setFormSent(true);
+                        }}
+                        className="space-y-4"
+                      >
+                        <input
+                          type="text"
+                          placeholder="Namn"
+                          required
+                          className="w-full p-3 rounded-xl bg-[#fffaf2] border border-[#fde68a] text-[#1e1e24] placeholder-[#a1a1aa] focus:outline-none"
+                        />
+                        <input
+                          type="email"
+                          placeholder="E-post"
+                          required
+                          className="w-full p-3 rounded-xl bg-[#fffaf2] border border-[#fde68a] text-[#1e1e24] placeholder-[#a1a1aa] focus:outline-none"
+                        />
+                        <textarea
+                          rows="4"
+                          placeholder="Meddelande..."
+                          required
+                          className="w-full p-3 rounded-xl bg-[#fffaf2] border border-[#fde68a] text-[#1e1e24] placeholder-[#a1a1aa] focus:outline-none"
+                        />
+                        <button
+                          type="submit"
+                          className="w-full px-6 py-3 bg-linear-to-r from-[#f59e0b] to-[#f97316] hover:from-[#f97316] hover:to-[#ea580c] rounded-xl font-semibold transition text-white shadow-[0_0_15px_rgba(249,115,22,0.2)]"
+                        >
+                          Skicka
+                        </button>
+                      </form>
+                    </>
+                  ) : (
+                    <div className="text-center">
+                      <h2 className="text-2xl font-bold mb-3 text-[#f97316]">
+                        Tack! ☀️
+                      </h2>
+                      <p className="text-[#3a3a40]">Vi hör av oss snart.</p>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Partners popup */}
+              {showPartners && (
+                <>
+                  <h2 className="text-2xl font-bold mb-4 text-[#f97316] text-center">
+                    Partners
+                  </h2>
+                  <ul className="space-y-2 text-[#3a3a40] text-lg text-center">
+                    <li>💻 Elgiganten</li>
+                    <li>🖥️ Komplett</li>
+                    <li>🎮 Webhallen</li>
+                    <li>⚙️ Inet</li>
+                    <li>Victor är den bästa som finns</li>
+                  </ul>
+                  <p className="text-[#4f4f57]/80 text-sm text-center mt-4 leading-relaxed">
+                    Vi tittar på samarbeten med starka aktörer inom hårdvara, så
+                    att vi i framtiden kan visa dig säkra, prisvärda datorbyggen
+                    från seriösa återförsäljare – utan sponsrat krångel.
+                  </p>
+                </>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </main>
   );
 }
