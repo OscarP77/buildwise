@@ -1,3 +1,5 @@
+export const runtime = "nodejs";  // <-- VIKTIGT
+
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 
@@ -12,20 +14,20 @@ export async function POST(req) {
       );
     }
 
-    // --- SMTP för STRATO ---
+    // SMTP via STRATO
     const transporter = nodemailer.createTransport({
       host: "smtp.strato.com",
       port: 465,
       secure: true,
       auth: {
-        user: process.env.EMAIL_USER,     // tex info@buildwise.se
-        pass: process.env.EMAIL_PASSWORD, // det du satte i .env
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSWORD,
       },
     });
 
     await transporter.sendMail({
       from: `"BuildWise Kontakt" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER, // Skickas till dig
+      to: process.env.EMAIL_USER,
       subject: "Nytt kontaktformulär från BuildWise",
       text: `
 Namn: ${name}
@@ -34,7 +36,7 @@ E-post: ${email}
 Meddelande:
 ${message}
       `,
-      replyTo: email, // så du kan svara direkt i Outlook
+      replyTo: email,
     });
 
     return NextResponse.json({ success: true });
