@@ -16,7 +16,7 @@ const texts = [
   "Allt du behöver — i ett verktyg 🔍",
 ];
 
-// --- Relevanta nyckelord för att filtrera bort icke-datorfrågor ---
+// --- Relevanta nyckelord ---
 const relevantKeywords = [
   "dator",
   "pc",
@@ -38,7 +38,7 @@ const relevantKeywords = [
 ];
 
 export default function Home() {
-  // --- Inloggningsstatus ---
+  // --- Inloggning ---
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -65,7 +65,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [started, setStarted] = useState(false);
 
-  // --- UI animation / visuals state ---
+  // --- UI state ---
   const [offsetY, setOffsetY] = useState(0);
   const [currentTextIndex, setCurrentTextIndex] = useState(0);
   const ticking = useRef(false);
@@ -93,7 +93,7 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // --- Första meddelandet i chatten ---
+  // --- Första meddelande ---
   useEffect(() => {
     setMessages([
       {
@@ -104,7 +104,7 @@ export default function Home() {
     ]);
   }, []);
 
-  // --- Markera komponentord i svaren ---
+  // --- Highlight komponentord ---
   const highlightComponents = (text) => {
     const parts = text.split(
       /(\b(?:cpu|gpu|ram|minne|ssd|moderkort|chassi|psu|grafikkort|kylning)\b)/gi
@@ -131,15 +131,16 @@ export default function Home() {
     });
   };
 
-  // --- Relevansfilter (bara datorfrågor) ---
+  // --- Relevansfilter ---
   const isRelevant = (text) => {
     const lower = text.toLowerCase();
     return relevantKeywords.some((word) => lower.includes(word));
   };
 
-  // --- Skicka meddelande till Erik ---
+  // --- Skicka meddelande ---
   const sendMessage = async (messageText) => {
     if (!messageText.trim()) return;
+
     const userMessage = { role: "user", content: messageText };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
@@ -165,7 +166,7 @@ export default function Home() {
         /(rtx\s*\d{3,4}|rx\s*\d{3,4}|i[3579]-?\d{4,5}k?|ryzen\s*\d\s*\d{3,4})/i
       );
 
-      // Enkel prisfrågekoll mot /api/price-check
+      // Prisfrågor – API
       if (lowerMsg.includes("pris") || lowerMsg.includes("kostar")) {
         if (priceMatch) {
           const product = priceMatch[0].trim();
@@ -180,6 +181,7 @@ export default function Home() {
             if (priceData?.prices?.length) {
               const cheapest = priceData.prices[0];
               const highest = priceData.prices[priceData.prices.length - 1];
+
               setMessages((prev) => [
                 ...prev,
                 {
@@ -187,19 +189,19 @@ export default function Home() {
                   content: `💰 ${product.toUpperCase()} hittades från ${cheapest.price} till ${highest.price} hos ${priceData.prices
                     .slice(0, 3)
                     .map((p) => p.store)
-                    .join(", ")}.`,
+                    .join(", ")}`,
                 },
               ]);
               setLoading(false);
               return;
             }
           } catch (err) {
-            console.error("Fel vid prisförfrågan:", err);
+            console.error("Prisfel:", err);
           }
         }
       }
 
-      // Vanlig AI-chat via /api/chat
+      // Vanlig AI-chat
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -226,9 +228,7 @@ export default function Home() {
         {
           role: "assistant",
           content: (
-            <p className="leading-relaxed">
-              Något gick fel — försök igen om en stund.
-            </p>
+            <p className="leading-relaxed">Något gick fel — försök igen.</p>
           ),
         },
       ]);
@@ -244,7 +244,6 @@ export default function Home() {
       sendMessage(input);
     }
   };
-
   // --- Popup-animationer ---
   const backdropVariants = {
     hidden: { opacity: 0 },
@@ -270,7 +269,7 @@ export default function Home() {
     setContactSending(false);
   };
 
-  // --- Kontaktformulärets submit ---
+  // --- Kontaktformulär Submit ---
   const handleContactSubmit = async (e) => {
     e.preventDefault();
     setContactError("");
@@ -281,6 +280,7 @@ export default function Home() {
     }
 
     setContactSending(true);
+
     try {
       const res = await fetch("/api/contact", {
         method: "POST",
@@ -293,6 +293,7 @@ export default function Home() {
       });
 
       const data = await res.json();
+
       if (data.success) {
         setFormSent(true);
         setContactName("");
@@ -369,7 +370,7 @@ export default function Home() {
           }}
         >
           <div className="flex items-center gap-3">
-            <div className="w-14 h-14 relative rounded-xl overflow-hidden drop-shadow-[0_0_10px_rgba(249,115,22,0.4)] ml-2.5t-[2px]">
+            <div className="w-14 h-14 relative rounded-xl overflow-hidden drop-shadow-[0_0_10px_rgba(249,115,22,0.4)] ml-2.5">
               <Image
                 src="/logga.png"
                 alt="BuildWise logotyp"
@@ -378,6 +379,7 @@ export default function Home() {
                 priority
               />
             </div>
+
             <div className="flex flex-col">
               <h1 className="text-[#1e1e24] text-2xl font-bold leading-tight">
                 BuildWise
@@ -396,18 +398,21 @@ export default function Home() {
             >
               Om oss
             </button>
+
             <button
               onClick={() => setShowContact(true)}
               className="text-[#333] hover:text-[#f59e0b] transition"
             >
               Kontakt
             </button>
+
             <button
               onClick={() => setShowPartners(true)}
               className="text-[#333] hover:text-[#f59e0b] transition"
             >
               Partners
             </button>
+
             <Link
               href="/blogg"
               className="text-[#333] hover:text-[#f59e0b] transition"
@@ -445,7 +450,6 @@ export default function Home() {
 
       {/* Spacer för header */}
       <div style={{ height: 64 }} />
-
       {/* --- Hero Sektion med knappar --- */}
       <section className="relative flex flex-col items-center justify-center flex-1 text-center mt-8">
         <div className="w-[480px] max-w-[90%] rounded-3xl shadow-[0_8px_25px_rgba(249,115,22,0.15)] overflow-hidden relative">
@@ -460,7 +464,6 @@ export default function Home() {
         </div>
 
         <div className="mt-8 flex flex-wrap justify-center gap-4">
-          {/* Bygg din dator */}
           <Link
             href="/build-setup"
             className="px-6 py-3 bg-linear-to-r from-[#f59e0b] to-[#f97316] hover:from-[#f97316] hover:to-[#ea580c] text-white rounded-xl font-semibold transition shadow-[0_0_20px_rgba(249,115,22,0.2)]"
@@ -468,7 +471,6 @@ export default function Home() {
             Bygg din dator
           </Link>
 
-          {/* Uppgradera dator */}
           <button
             onClick={() => {
               setStarted(true);
@@ -482,7 +484,6 @@ export default function Home() {
             Uppgradera dator
           </button>
 
-          {/* Skapa din dator */}
           <Link
             href="/build-ai"
             className="px-6 py-3 bg-linear-to-r from-[#f59e0b] via-[#f97316] to-[#fb923c] hover:from-[#f97316] hover:to-[#ea580c] text-white rounded-xl font-semibold shadow-[0_0_25px_rgba(249,115,22,0.3)] transition"
@@ -552,7 +553,6 @@ export default function Home() {
                   ))}
                 </AnimatePresence>
 
-                {/* Laddningsbubblor */}
                 {loading && (
                   <div className="flex justify-start items-center gap-2">
                     <div className="flex space-x-1">
@@ -618,12 +618,10 @@ export default function Home() {
         ))}
       </div>
 
-      {/* --- Footer --- */}
+      {/* Footer */}
       <footer className="mt-16 text-center text-[#a1a1aa] pb-8">
-        © {new Date().getFullYear()} BuildWise ☀️ Alla rättigheter
-        förbehållna.
+        © {new Date().getFullYear()} BuildWise ☀️ Alla rättigheter förbehållna.
       </footer>
-
       {/* --- Popups (Om oss / Kontakt / Partners) --- */}
       <AnimatePresence>
         {(showAbout || showContact || showPartners) && (
@@ -650,64 +648,45 @@ export default function Home() {
                 ✕
               </button>
 
-              {/* Om oss popup */}
+              {/* --- OM OSS POPUP --- */}
               {showAbout && (
                 <>
-                  <h2 className="text-2xl font-bold mb-4 text-[#f97316]">
-                    Om oss
-                  </h2>
+                  <h2 className="text-2xl font-bold mb-4 text-[#f97316]">Om oss</h2>
                   <p className="text-[#3a3a40] leading-relaxed">
                     BuildWise startades av <strong>Oscar Petersson</strong> och{" "}
-                    <strong>Victor Rosengren</strong>. Idén kom när Oscar
-                    försökte uppgradera sin egen dator, och Victor ville köpa en
-                    ny men inte visste var han skulle börja. Vi insåg hur mycket
-                    tid som går åt till att jämföra delar, priser och
-                    kompatibilitet – och hur lätt det är att göra felköp.
+                    <strong>Victor Rosengren</strong>. Idén kom när Oscar försökte
+                    uppgradera sin egen dator och Victor ville köpa en ny men inte visste
+                    var han skulle börja.
                   </p>
                   <p className="text-[#3a3a40] leading-relaxed mt-4">
-                    Där föddes tanken om en AI-rådgivare som faktiskt kan lyssna
-                    på dina behov, din budget och ditt syfte – och sen
-                    rekommendera en dator som passar just dig. Vårt mål är att
-                    göra datorbygge enkelt, tryggt och roligt. Oavsett om du är
-                    helt ny eller entusiast.
-                  </p>
-                  <p className="text-[#3a3a40] leading-relaxed mt-4">
-                    Framåt bygger vi fler smarta funktioner: automatisk
-                    kompatibilitetskontroll, prisbevakning, FPS-prognoser i
-                    riktiga spel och personliga uppgraderingsplaner för din
-                    nuvarande PC. Vi vill att du alltid ska känna dig säker på
-                    nästa köp.
+                    Vi bygger AI-verktyg som gör datorbygge enklare och tryggare – utan
+                    felköp och onödiga kostnader.
                   </p>
                   <p className="text-[#4f4f57]/80 italic mt-4">
-                    Det började som ett litet projekt mellan två vänner – och
-                    resten är historia. 💻
+                    Det började som ett litet projekt mellan två vänner — nu förändrar vi
+                    hur folk bygger datorer 💻
                   </p>
                 </>
               )}
 
-              {/* Kontakt popup */}
+              {/* --- KONTAKT POPUP --- */}
               {showContact && (
                 <>
                   {!formSent ? (
                     <>
-                      <h2 className="text-2xl font-bold mb-4 text-[#f97316]">
-                        Kontakt
-                      </h2>
-                      <p className="text-[#3a3a40] mb-4 leading-relaxed">
-                        Har du frågor, feedback eller vill samarbeta? Skriv
-                        till oss här så återkommer vi så snart vi kan.
+                      <h2 className="text-2xl font-bold mb-4 text-[#f97316]">Kontakt</h2>
+                      <p className="text-[#3a3a40] mb-4">
+                        Har du frågor? Skriv till oss här 👇
                       </p>
-                      <form
-                        onSubmit={handleContactSubmit}
-                        className="space-y-4"
-                      >
+
+                      <form onSubmit={handleContactSubmit} className="space-y-4">
                         <input
                           type="text"
                           placeholder="Namn"
                           required
                           value={contactName}
                           onChange={(e) => setContactName(e.target.value)}
-                          className="w-full p-3 rounded-xl bg-[#fffaf2] border border-[#fde68a] text-[#1e1e24] placeholder-[#a1a1aa] focus:outline-none"
+                          className="w-full p-3 rounded-xl bg-[#fffaf2] border border-[#fde68a]"
                         />
                         <input
                           type="email"
@@ -715,7 +694,7 @@ export default function Home() {
                           required
                           value={contactEmail}
                           onChange={(e) => setContactEmail(e.target.value)}
-                          className="w-full p-3 rounded-xl bg-[#fffaf2] border border-[#fde68a] text-[#1e1e24] placeholder-[#a1a1aa] focus:outline-none"
+                          className="w-full p-3 rounded-xl bg-[#fffaf2] border border-[#fde68a]"
                         />
                         <textarea
                           rows="4"
@@ -723,17 +702,17 @@ export default function Home() {
                           required
                           value={contactMessage}
                           onChange={(e) => setContactMessage(e.target.value)}
-                          className="w-full p-3 rounded-xl bg-[#fffaf2] border border-[#fde68a] text-[#1e1e24] placeholder-[#a1a1aa] focus:outline-none"
+                          className="w-full p-3 rounded-xl bg-[#fffaf2] border border-[#fde68a]"
                         />
+
                         {contactError && (
-                          <p className="text-sm text-red-500">
-                            {contactError}
-                          </p>
+                          <p className="text-red-500 text-sm">{contactError}</p>
                         )}
+
                         <button
                           type="submit"
                           disabled={contactSending}
-                          className="w-full px-6 py-3 bg-linear-to-r from-[#f59e0b] to-[#f97316] hover:from-[#f97316] hover:to-[#ea580c] rounded-xl font-semibold transition text-white shadow-[0_0_15px_rgba(249,115,22,0.2)] disabled:opacity-60"
+                          className="w-full px-6 py-3 bg-linear-to-r from-[#f59e0b] to-[#f97316] text-white rounded-xl font-semibold disabled:opacity-60 shadow"
                         >
                           {contactSending ? "Skickar..." : "Skicka"}
                         </button>
@@ -745,29 +724,28 @@ export default function Home() {
                         Tack! ☀️
                       </h2>
                       <p className="text-[#3a3a40]">
-                        Ditt meddelande är skickat. Vi hör av oss snart.
+                        Ditt meddelande är skickat. Vi hör av oss snart!
                       </p>
                     </div>
                   )}
                 </>
               )}
 
-              {/* Partners popup */}
+              {/* --- PARTNERS POPUP --- */}
               {showPartners && (
                 <>
                   <h2 className="text-2xl font-bold mb-4 text-[#f97316] text-center">
                     Partners
                   </h2>
-                  <ul className="space-y-2 text-[#3a3a40] text-lg text-center">
+                  <ul className="space-y-2 text-center text-lg text-[#3a3a40]">
                     <li>💻 Elgiganten</li>
                     <li>🖥️ Komplett</li>
                     <li>🎮 Webhallen</li>
                     <li>⚙️ Inet</li>
                   </ul>
-                  <p className="text-[#4f4f57]/80 text-sm text-center mt-4 leading-relaxed">
-                    Vi tittar på samarbeten med starka aktörer inom hårdvara, så
-                    att vi i framtiden kan visa dig säkra, prisvärda datorbyggen
-                    från seriösa återförsäljare – utan sponsrat krångel.
+                  <p className="text-[#4f4f57]/80 text-sm mt-4 text-center">
+                    Vi arbetar på fler samarbeten för att kunna visa bättre priser &
+                    rekommendationer direkt i Erik-chatten.
                   </p>
                 </>
               )}

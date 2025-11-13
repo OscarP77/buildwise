@@ -1,10 +1,61 @@
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 
+// --- In-memory rate limit ---
+const RATE_LIMIT = new Map();
+const LIMIT_TIME = 1000 * 60 * 2; // 2 minuter mellan försök
+
 export async function POST(req) {
   try {
-    const { name, email, message } = await req.json();
+    const ip =
+      req.headers.get("x-forwarded-for")?.split(",")[0] ||
+      req.headers.get("x-real-ip") ||
+      "Unknown";
 
+    const ua = req.headers.get("user-agent") || "Unknown";
+    const referer = req.headers.get("referer") || "Unknown";
+
+    const body = await req.json();
+    const { name, email, message, honey, timeStarted } = body;
+
+    // --- 1. Honeypot-botten check ---
+    if (honey && honey.trim() !== "") {
+      return NextResponse.json(
+        { success: false, error: "Bot detected (honeypot filled)" },
+        { status: 400 }
+      );
+    }
+
+    // --- 2. Tid-check (bots skickar direkt) ---
+    const now = Date.now();
+    if (!timeStarted || now - timeStarted < 1200) {
+      return NextResponse.json(
+        { success: false, error: "Suspiciously fast submission" },
+        { status: 400 }
+      );
+    }
+
+    // --- 3. Rate-limit per IP ---
+    const last = RATE_LIMIT.get(ip);
+    if (last && now - last < LIMIT_TIME) {
+      return NextResponse.json(
+        { success: false, error: "Too many requests from this IP" },
+        { status: 429 }
+      );
+    }
+    RATE_LIMIT.set(ip, now);
+
+    // --- 4. Blockera vanliga bot-fraser ---
+    const botWords = ["viagra", "sex", "adult", "porn", "casino", "loan", "click here"];
+    const msgLower = message.toLowerCase();
+    if (botWords.some((w) => msgLower.includes(w))) {
+      return NextResponse.json(
+        { success: false, error: "Blocked due to spam keywords" },
+        { status: 400 }
+      );
+    }
+
+    // --- 5. Validering ---
     if (!name || !email || !message) {
       return NextResponse.json(
         { success: false, error: "All fields are required." },
@@ -12,23 +63,7 @@ export async function POST(req) {
       );
     }
 
-    // --- Hämta extra metadata för spam-skydd ---
-    const headers = req.headers;
-
-    const ip =
-      headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-      headers.get("x-real-ip") ||
-      "Unknown";
-
-    const userAgent = headers.get("user-agent") || "Unknown device";
-
-    const referer = headers.get("referer") || "No referer";
-
-    const timestamp = new Date().toLocaleString("sv-SE", {
-      timeZone: "Europe/Stockholm",
-    });
-
-    // --- SMTP STRATO ---
+    // --- 6. STRATO SMTP transporter ---
     const transporter = nodemailer.createTransport({
       host: "smtp.strato.com",
       port: 465,
@@ -39,29 +74,27 @@ export async function POST(req) {
       },
     });
 
-    // --- MAIL SOM SKICKAS TILL DIG ---
+    // --- 7. Skicka mail med extra info ---
     await transporter.sendMail({
       from: `"BuildWise Kontakt" <${process.env.EMAIL_USER}>`,
       to: process.env.EMAIL_USER,
-      subject: "📩 Ny kontaktförfrågan via BuildWise",
+      subject: "Nytt kontaktformulär från BuildWise",
       text: `
-En användare har skickat ett meddelande via kontaktformuläret:
+Ett nytt meddelande har skickats via formuläret.
 
-──────────────
-👤 Namn: ${name}
-📧 E-post: ${email}
-📅 Tid: ${timestamp}
+--- AVSÄNDARE ---
+Namn: ${name}
+E-post: ${email}
 
-💬 Meddelande:
+--- MEDDELANDE ---
 ${message}
 
-──────────────
-📌 TECHNICAL INFO (Anti-spam log):
-IP-address: ${ip}
-Device/User-Agent: ${userAgent}
+--- TEKNISK INFO ---
+IP-adress: ${ip}
+Enhet/Browser: ${ua}
 Referer: ${referer}
+Tidsåtgång för formuläret: ${(now - timeStarted) / 1000}s
 
-──────────────
       `,
       replyTo: email,
     });
