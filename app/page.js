@@ -369,7 +369,7 @@ export default function Home() {
           }}
         >
           <div className="flex items-center gap-3">
-            <div className="w-14 h-14 relative rounded-xl overflow-hidden drop-shadow-[0_0_10px_rgba(249,115,22,0.4)] ml-[10px] mt-[2px]">
+            <div className="w-14 h-14 relative rounded-xl overflow-hidden drop-shadow-[0_0_10px_rgba(249,115,22,0.4)] ml-2.5t-[2px]">
               <Image
                 src="/logga.png"
                 alt="BuildWise logotyp"
@@ -450,7 +450,7 @@ export default function Home() {
       <section className="relative flex flex-col items-center justify-center flex-1 text-center mt-8">
         <div className="w-[480px] max-w-[90%] rounded-3xl shadow-[0_8px_25px_rgba(249,115,22,0.15)] overflow-hidden relative">
           <Image
-            src="/hero-sandstone.png"
+            src="/hero-sandstonev2.png"
             alt="BuildWise – AI som hjälper dig bygga dator"
             width={960}
             height={640}
