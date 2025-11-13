@@ -17,10 +17,13 @@ export default function BuildAIPage() {
     os: null,
   });
   const [activeCategory, setActiveCategory] = useState("cpu");
+
+  // CHAT STATES
   const [showChat, setShowChat] = useState(false);
   const [chatInput, setChatInput] = useState("");
+  const [sending, setSending] = useState(false);
   const [messages, setMessages] = useState([
-    { from: "erik", text: "Hej! Jag är Erik 💻 Din AI-byggassistent. Vad vill du ha hjälp med?" },
+    { from: "erik", text: "Hej! Jag heter Erik ☀️ Vad vill du ha hjälp med i datorbygget?" },
   ]);
 
   // --- Kalkyler ---
@@ -52,6 +55,39 @@ export default function BuildAIPage() {
     return "Kompatibilitet ännu ej kontrollerad ⚙️";
   }, [build]);
 
+
+  // ✅ NY SENDCHAT — HELT FIXAD
+  async function sendChat() {
+    if (!chatInput.trim() || sending) return;
+
+    const userMsg = { from: "user", text: chatInput.trim() };
+    const newMessages = [...messages, userMsg];
+
+    setMessages(newMessages);
+    setChatInput("");
+    setSending(true);
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: newMessages }),
+      });
+
+      const data = await res.json();
+
+      setMessages((m) => [...m, { from: "erik", text: data.reply }]);
+    } catch {
+      setMessages((m) => [
+        ...m,
+        { from: "erik", text: "Något gick fel – försök igen om en stund 🙏" },
+      ]);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  // ✅ KATEGORIER
   const categories = [
     { key: "cpu", label: "CPU" },
     { key: "gpu", label: "Grafikkort" },
@@ -65,32 +101,17 @@ export default function BuildAIPage() {
     { key: "os", label: "Operativsystem" },
   ];
 
-  // --- Chat-funktion (lokal) ---
-  function sendChat() {
-    if (!chatInput.trim()) return;
-    setMessages((m) => [...m, { from: "user", text: chatInput }]);
-    setChatInput("");
-    // (placeholder-svar, vi kopplar OpenAI-API senare)
-    setTimeout(() => {
-      setMessages((m) => [
-        ...m,
-        {
-          from: "erik",
-          text: "Bra fråga! Jag analyserar dina val och återkommer snart 🔍",
-        },
-      ]);
-    }, 600);
-  }
-
-  // --- UI ---
   return (
-    <main className="min-h-screen bg-white text-black pt-24 pb-20 px-4 md:px-8">
-      <div className="max-w-7xl mx-auto border border-zinc-200 rounded-2xl bg-white shadow-lg flex flex-col md:flex-row overflow-hidden">
-        {/* Sidomeny */}
-        <aside className="w-full md:w-64 border-b md:border-r border-zinc-200 p-5 bg-zinc-50">
-          <h2 className="text-xs font-semibold text-zinc-500 uppercase mb-4">
+    <main className="min-h-screen bg-[#f4ede3] text-[#3c2e1e] pt-24 pb-20 px-4 md:px-8">
+
+      <div className="max-w-7xl mx-auto border border-[#dbcbb4] rounded-2xl bg-[#f9f4ec] shadow-lg flex flex-col md:flex-row overflow-hidden">
+
+        {/* SIDOMENY */}
+        <aside className="w-full md:w-64 border-b md:border-r border-[#dbcbb4] p-5 bg-[#f1e7d7]">
+          <h2 className="text-xs font-semibold text-[#7a5f39] uppercase mb-4 tracking-wide">
             Komponenter
           </h2>
+
           <div className="flex flex-col gap-3">
             {categories.map((c) => (
               <button
@@ -98,8 +119,8 @@ export default function BuildAIPage() {
                 onClick={() => setActiveCategory(c.key)}
                 className={`w-full text-left text-[13px] font-medium rounded-lg border px-3 py-2 transition ${
                   activeCategory === c.key
-                    ? "bg-purple-600 text-white border-purple-500"
-                    : "bg-white border-zinc-200 hover:border-purple-400 hover:text-purple-600"
+                    ? "bg-[#b89b6e] text-white border-[#a1845e]"
+                    : "bg-[#fffaf3] border-[#dbcbb4] hover:border-[#b89b6e] hover:text-[#7a5f39]"
                 }`}
               >
                 {c.label}
@@ -107,12 +128,9 @@ export default function BuildAIPage() {
             ))}
           </div>
 
-          {/* Sammanfattning */}
           <div className="mt-8">
-            <p className="text-[11px] text-zinc-500 mb-2 uppercase tracking-wide">
-              Ditt bygge
-            </p>
-            <ul className="text-[12px] text-zinc-700 space-y-1">
+            <p className="text-[11px] text-[#7a5f39] mb-2 uppercase tracking-wide">Ditt bygge</p>
+            <ul className="text-[12px] text-[#6e502e] space-y-1">
               {categories.map((c) => (
                 <li key={c.key}>
                   {c.label}: {build[c.key]?.name || "—"}
@@ -122,45 +140,32 @@ export default function BuildAIPage() {
           </div>
         </aside>
 
-        {/* Huvuddel */}
-        <section className="flex-1 p-6 flex flex-col gap-6 bg-white">
-          {/* Info-paneler */}
+        {/* HUVUDDEL */}
+        <section className="flex-1 p-6 flex flex-col gap-6 bg-[#f9f4ec]">
+
+          {/* Info paneler */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <InfoBox title="Totalt pris" value={totalPrice} color="purple" />
-            <InfoBox
-              title="Total strömförsörjning"
-              value={totalPower}
-              color="zinc"
-            />
-            <InfoBox
-              title="Prestandapoäng"
-              value={performanceScore}
-              color="green"
-            />
-            <InfoBox
-              title="Kompatibilitet"
-              value={compatibilityStatus}
-              color="blue"
-            />
+            <InfoBox title="Totalt pris" value={totalPrice} color="gold" />
+            <InfoBox title="Total strömförsörjning" value={totalPower} color="sand" />
+            <InfoBox title="Prestandapoäng" value={performanceScore} color="green" />
+            <InfoBox title="Kompatibilitet" value={compatibilityStatus} color="brown" />
           </div>
 
           {/* Aktiv komponent */}
-          <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-6 overflow-y-auto min-h-[300px] max-h-[60vh]">
+          <div className="rounded-xl border border-[#dbcbb4] bg-[#f4ede3] p-6 overflow-y-auto min-h-[300px] max-h-[60vh]">
+
             {!build[activeCategory] ? (
               <div>
-                <h3 className="text-base font-semibold text-black mb-2">
+                <h3 className="text-base font-semibold text-[#3c2e1e] mb-2">
                   {labelForCategory(activeCategory)} är inte valt ännu
                 </h3>
-                <p className="text-sm text-zinc-600 mb-4">
-                  Här är några rekommenderade alternativ:
-                </p>
 
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {[1, 2, 3].map((n) => (
                     <motion.button
                       key={n}
                       whileHover={{ scale: 1.03 }}
-                      className="text-left rounded-lg border border-zinc-200 bg-white p-3 hover:border-purple-400 hover:shadow-[0_0_10px_rgba(147,51,234,0.2)] transition"
+                      className="text-left rounded-lg border border-[#dbcbb4] bg-[#fffaf3] p-3 hover:border-[#b89b6e] hover:shadow-[0_0_10px_rgba(184,155,110,0.25)]"
                       onClick={() =>
                         setBuild((b) => ({
                           ...b,
@@ -172,80 +177,65 @@ export default function BuildAIPage() {
                         }))
                       }
                     >
-                      <p className="text-sm font-semibold text-black leading-snug">
+                      <p className="text-sm font-semibold text-[#3c2e1e]">
                         {demoName(activeCategory, n)}
                       </p>
-                      <p className="text-purple-600 text-[12px] font-medium mt-1">
-                        {demoPrice(activeCategory, n)} kr
-                      </p>
-                      {demoWatt(activeCategory, n) && (
-                        <p className="text-[11px] text-zinc-500 mt-1">
-                          {demoWatt(activeCategory, n)} W
-                        </p>
-                      )}
+                      <p className="text-[#b89b6e] text-[12px] font-medium">{demoPrice(activeCategory, n)} kr</p>
                     </motion.button>
                   ))}
                 </div>
               </div>
             ) : (
               <div>
-                <h3 className="text-base font-semibold text-black mb-2">
+                <h3 className="text-base font-semibold mb-2">
                   Vald {labelForCategory(activeCategory)}:
                 </h3>
-                <div className="rounded-lg border border-green-400 bg-green-50 p-4">
-                  <p className="text-sm font-semibold text-black">
-                    {build[activeCategory]?.name}
-                  </p>
-                  <p className="text-green-600 text-[13px] font-medium mt-1">
-                    {build[activeCategory]?.price} kr
-                  </p>
+
+                <div className="rounded-lg border border-[#a3d9a5] bg-[#e9f9ea] p-4">
+                  <p className="font-semibold">{build[activeCategory]?.name}</p>
+                  <p className="text-green-700">{build[activeCategory]?.price} kr</p>
                 </div>
+
                 <div className="mt-4 flex gap-3">
                   <button
-                    onClick={() =>
-                      setBuild((b) => ({ ...b, [activeCategory]: null }))
-                    }
-                    className="px-3 py-2 rounded-lg border border-red-400 text-red-500 bg-red-50 hover:bg-red-100 text-sm font-medium"
+                    onClick={() => setBuild((b) => ({ ...b, [activeCategory]: null }))}
+                    className="px-3 py-2 rounded-lg border border-[#e3b2b2] text-[#a54c4c] bg-[#fbecec]"
                   >
                     Ta bort
                   </button>
-                  <button className="px-3 py-2 rounded-lg border border-purple-400 text-purple-600 bg-purple-50 hover:bg-purple-100 text-sm font-medium">
+
+                  <button
+                    onClick={() => setShowChat(true)}
+                    className="px-3 py-2 rounded-lg border border-[#b89b6e] bg-[#f4ede3]"
+                  >
                     Be Erik om nya alternativ
                   </button>
                 </div>
               </div>
             )}
-          </div>
 
-          {/* Spara / Export */}
-          <div className="flex flex-col lg:flex-row gap-4">
-            <button className="flex-1 rounded-xl border border-purple-400 bg-purple-50 text-purple-700 text-sm font-medium px-4 py-3 hover:bg-purple-100 transition">
-              Spara bygget till mitt konto
-            </button>
-            <button className="flex-1 rounded-xl border border-zinc-300 bg-zinc-50 text-zinc-700 text-sm font-medium px-4 py-3 hover:bg-zinc-100 transition">
-              Ladda ner specifikation som PDF
-            </button>
           </div>
         </section>
       </div>
 
-      {/* --- Erik-bubbla --- */}
+      {/* CHAT BUTTON */}
       <button
         onClick={() => setShowChat(!showChat)}
-        className="fixed bottom-6 right-6 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-lg px-5 py-3 text-sm font-semibold flex items-center gap-2 transition"
+        className="fixed bottom-6 right-6 bg-[#b89b6e] text-white rounded-full px-5 py-3 shadow-xl"
       >
         💬 Fråga Erik om hjälp
       </button>
 
+      {/* CHAT BOX */}
       <AnimatePresence>
         {showChat && (
           <motion.div
-            initial={{ opacity: 0, y: 50 }}
+            initial={{ opacity: 0, y: 60 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-20 right-6 w-80 bg-white border border-zinc-200 shadow-xl rounded-2xl overflow-hidden flex flex-col"
+            exit={{ opacity: 0, y: 60 }}
+            className="fixed bottom-20 right-6 w-80 bg-[#fffaf3] border border-[#dbcbb4] shadow-2xl rounded-2xl flex flex-col"
           >
-            <div className="bg-purple-600 text-white text-sm font-semibold px-4 py-2 flex justify-between items-center">
+            <div className="bg-[#b89b6e] text-white px-4 py-2 text-sm font-semibold flex justify-between">
               <span>Erik – din AI-assistent 🤖</span>
               <button onClick={() => setShowChat(false)}>✕</button>
             </div>
@@ -254,28 +244,36 @@ export default function BuildAIPage() {
               {messages.map((m, i) => (
                 <div
                   key={i}
-                  className={`${
+                  className={`px-3 py-2 rounded-lg max-w-[80%] ${
                     m.from === "erik"
-                      ? "bg-purple-100 text-purple-900 self-start"
-                      : "bg-zinc-200 text-black self-end"
-                  } px-3 py-2 rounded-lg max-w-[80%]`}
+                      ? "bg-[#eadfcf] text-[#6e502e]"
+                      : "bg-[#d6c7b3] text-[#3c2e1e] self-end"
+                  }`}
                 >
                   {m.text}
                 </div>
               ))}
+
+              {sending && (
+                <div className="bg-[#eadfcf] text-[#6e502e] px-3 py-2 rounded-lg max-w-[80%] italic opacity-80">
+                  Erik skriver…
+                </div>
+              )}
             </div>
 
-            <div className="p-2 border-t border-zinc-200 flex gap-2">
+            <div className="p-2 border-t border-[#dbcbb4] flex gap-2 bg-[#f4ede3]">
               <input
                 type="text"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Ställ en fråga till Erik..."
-                className="flex-1 text-sm border border-zinc-300 rounded-lg px-2 py-1 focus:outline-none focus:border-purple-500"
+                placeholder="Ställ en fråga..."
+                className="flex-1 text-sm border border-[#cdbba5] rounded-lg px-2 py-1 bg-white/80"
+                onKeyDown={(e) => e.key === "Enter" && sendChat()}
               />
               <button
                 onClick={sendChat}
-                className="bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg px-3 transition"
+                disabled={sending}
+                className="bg-[#b89b6e] text-white rounded-lg px-3"
               >
                 Skicka
               </button>
@@ -283,6 +281,7 @@ export default function BuildAIPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
     </main>
   );
 }
@@ -290,16 +289,15 @@ export default function BuildAIPage() {
 // --- Hjälpfunktioner ---
 function InfoBox({ title, value, color }) {
   const colorMap = {
-    purple: "text-purple-600 border-purple-200 bg-purple-50",
-    zinc: "text-zinc-700 border-zinc-200 bg-zinc-50",
-    green: "text-green-600 border-green-200 bg-green-50",
-    blue: "text-blue-600 border-blue-200 bg-blue-50",
+    gold: "text-[#b89b6e] border-[#e6d5be] bg-[#faf5ee]",
+    sand: "text-[#7a5f39] border-[#dbcbb4] bg-[#f4ede3]",
+    green: "text-green-700 border-green-200 bg-green-50",
+    brown: "text-[#6e502e] border-[#dbcbb4] bg-[#f1e7d7]",
   };
+
   return (
-    <div
-      className={`rounded-xl border ${colorMap[color]} p-4 shadow-sm flex flex-col`}
-    >
-      <p className="text-[11px] uppercase tracking-wide text-zinc-500 mb-1">
+    <div className={`rounded-xl border p-4 shadow-sm flex flex-col ${colorMap[color]}`}>
+      <p className="text-[11px] uppercase tracking-wide text-[#7a5f39] mb-1">
         {title}
       </p>
       <p className="text-base font-semibold leading-tight">{value}</p>

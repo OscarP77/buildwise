@@ -45,20 +45,26 @@ export default function BuildSetupPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-linear-to-b from-black via-zinc-900 to-zinc-800 text-white px-4">
-      <div className="bg-white text-black p-8 rounded-2xl shadow-xl w-full max-w-lg">
-        <h1 className="text-2xl font-bold mb-4 text-center">Bygg din dator</h1>
-        <p className="text-center text-gray-600 mb-6">
+    <main className="min-h-screen flex items-center justify-center bg-[#f4ede3] text-[#3c2e1e] px-4">
+
+      {/* CARD */}
+      <div className="bg-[#f9f4ec] text-[#3c2e1e] p-8 rounded-2xl shadow-xl w-full max-w-lg border border-[#dbcbb4]">
+
+        <h1 className="text-2xl font-bold mb-4 text-center text-[#6e502e]">
+          Bygg din dator
+        </h1>
+
+        <p className="text-center text-[#7a5f39] mb-6">
           Gör din upplevelse personlig – svara på några snabba frågor.
         </p>
 
-        <label className="flex items-center gap-2 mb-6">
+        <label className="flex items-center gap-2 mb-6 text-[#6e502e] bg-[#f1e7d7] p-2 rounded-lg border border-[#dbcbb4]">
           <input
             type="checkbox"
             checked={iDontKnow}
             onChange={(e) => setIDontKnow(e.target.checked)}
           />
-          <span>Jag vet inte / låt AI välja åt mig</span>
+          <span className="text-sm">Jag vet inte / låt AI välja åt mig</span>
         </label>
 
         <AnimatePresence mode="wait">
@@ -70,16 +76,21 @@ export default function BuildSetupPage() {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
             >
+
+              {/* STEP 1 */}
               {step === 1 && (
                 <div className="space-y-4">
+
                   <label className="block">
-                    <span className="text-sm font-semibold">Vad ska datorn användas till?</span>
+                    <span className="text-sm font-semibold text-[#6e502e]">
+                      Vad ska datorn användas till?
+                    </span>
                     <select
                       value={form.purpose}
                       onChange={(e) =>
                         setForm({ ...form, purpose: e.target.value })
                       }
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 text-sm"
+                      className="w-full border border-[#dbcbb4] rounded-lg px-3 py-2 mt-1 bg-[#fffaf3] text-sm focus:outline-none focus:border-[#b89b6e]"
                     >
                       <option value="">Välj...</option>
                       <option value="gaming">Gaming</option>
@@ -91,7 +102,9 @@ export default function BuildSetupPage() {
                   </label>
 
                   <label className="block">
-                    <span className="text-sm font-semibold">Din budget (kr)</span>
+                    <span className="text-sm font-semibold text-[#6e502e]">
+                      Din budget (kr)
+                    </span>
                     <input
                       type="number"
                       placeholder="Ex: 15000"
@@ -99,18 +112,25 @@ export default function BuildSetupPage() {
                       onChange={(e) =>
                         setForm({ ...form, budget: e.target.value })
                       }
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 text-sm"
+                      className="w-full border border-[#dbcbb4] rounded-lg px-3 py-2 mt-1 bg-[#fffaf3] text-sm focus:outline-none focus:border-[#b89b6e]"
                     />
                   </label>
                 </div>
               )}
 
+              {/* STEP 2 */}
               {step === 2 && (
                 <div>
-                  <span className="text-sm font-semibold">Vilka märken gillar du?</span>
+                  <span className="text-sm font-semibold text-[#6e502e]">
+                    Vilka märken gillar du?
+                  </span>
+
                   <div className="flex flex-wrap gap-3 mt-2">
                     {brandsList.map((brand) => (
-                      <label key={brand} className="flex items-center gap-2">
+                      <label
+                        key={brand}
+                        className="flex items-center gap-2 bg-[#f4ede3] border border-[#dbcbb4] px-3 py-1 rounded-lg text-sm text-[#6e502e]"
+                      >
                         <input
                           type="checkbox"
                           checked={form.brands.includes(brand)}
@@ -123,16 +143,20 @@ export default function BuildSetupPage() {
                 </div>
               )}
 
+              {/* STEP 3 */}
               {step === 3 && (
                 <div className="space-y-4">
+
                   <label className="block">
-                    <span className="text-sm font-semibold">Föredrar du Intel eller AMD?</span>
+                    <span className="text-sm font-semibold text-[#6e502e]">
+                      Föredrar du Intel eller AMD?
+                    </span>
                     <select
                       value={form.cpuBrand}
                       onChange={(e) =>
                         setForm({ ...form, cpuBrand: e.target.value })
                       }
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 text-sm"
+                      className="w-full border border-[#dbcbb4] rounded-lg px-3 py-2 mt-1 bg-[#fffaf3] text-sm focus:outline-none focus:border-[#b89b6e]"
                     >
                       <option value="">Välj...</option>
                       <option value="intel">Intel</option>
@@ -142,7 +166,9 @@ export default function BuildSetupPage() {
                   </label>
 
                   <label className="block">
-                    <span className="text-sm font-semibold">Spelar du några specifika spel?</span>
+                    <span className="text-sm font-semibold text-[#6e502e]">
+                      Spelar du några specifika spel?
+                    </span>
                     <input
                       type="text"
                       placeholder="CS2, Fortnite... (valfritt)"
@@ -150,12 +176,12 @@ export default function BuildSetupPage() {
                       onChange={(e) =>
                         setForm({ ...form, games: e.target.value })
                       }
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 text-sm"
+                      className="w-full border border-[#dbcbb4] rounded-lg px-3 py-2 mt-1 bg-[#fffaf3] text-sm focus:outline-none focus:border-[#b89b6e]"
                     />
                   </label>
 
                   <label className="block">
-                    <span className="text-sm font-semibold">
+                    <span className="text-sm font-semibold text-[#6e502e]">
                       Vill du ha RGB och design eller bara prestanda?
                     </span>
                     <select
@@ -163,7 +189,7 @@ export default function BuildSetupPage() {
                       onChange={(e) =>
                         setForm({ ...form, design: e.target.value })
                       }
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 text-sm"
+                      className="w-full border border-[#dbcbb4] rounded-lg px-3 py-2 mt-1 bg-[#fffaf3] text-sm focus:outline-none focus:border-[#b89b6e]"
                     >
                       <option value="">Välj...</option>
                       <option value="rgb">RGB & estetik</option>
@@ -171,17 +197,21 @@ export default function BuildSetupPage() {
                       <option value="vet inte">Vet inte</option>
                     </select>
                   </label>
+
                 </div>
               )}
+
             </motion.div>
           )}
         </AnimatePresence>
 
+        {/* BUTTONS */}
         <div className="flex justify-between mt-8">
+
           {step > 1 && !iDontKnow && (
             <button
               onClick={() => setStep((s) => s - 1)}
-              className="px-4 py-2 rounded-lg border border-gray-400 text-gray-700 hover:bg-gray-100"
+              className="px-4 py-2 rounded-lg border border-[#cdbba5] text-[#6e502e] bg-[#f4ede3] hover:bg-[#ebdfcb]"
             >
               Tillbaka
             </button>
@@ -190,7 +220,7 @@ export default function BuildSetupPage() {
           {step < 3 && !iDontKnow && (
             <button
               onClick={() => setStep((s) => s + 1)}
-              className="ml-auto px-4 py-2 rounded-lg bg-purple-700 text-white hover:bg-purple-800"
+              className="ml-auto px-4 py-2 rounded-lg bg-[#b89b6e] text-white hover:bg-[#a1845e]"
             >
               Nästa
             </button>
@@ -200,13 +230,15 @@ export default function BuildSetupPage() {
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="ml-auto px-4 py-2 rounded-lg bg-purple-700 text-white hover:bg-purple-800 disabled:opacity-50"
+              className="ml-auto px-4 py-2 rounded-lg bg-[#b89b6e] text-white hover:bg-[#a1845e] disabled:opacity-50"
             >
               {loading ? "Genererar..." : "Visa datorförslag"}
             </button>
           )}
+
         </div>
       </div>
+
     </main>
   );
 }

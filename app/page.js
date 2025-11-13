@@ -1,19 +1,48 @@
 "use client";
+
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Inter } from "next/font/google";
 import Link from "next/link";
+import Image from "next/image";
 
 const inter = Inter({ subsets: ["latin"] });
+
+// --- Textloop vänster ---
+const texts = [
+  "Bygg din drömdator med Erik 🔆",
+  "Låt AI hjälpa dig välja rätt komponenter 💡",
+  "Spara pengar med smartare val ⚙️",
+  "Allt du behöver — i ett verktyg 🔍",
+];
+
+// --- Relevanta nyckelord för att filtrera bort icke-datorfrågor ---
+const relevantKeywords = [
+  "dator",
+  "pc",
+  "processor",
+  "cpu",
+  "gpu",
+  "grafikkort",
+  "ram",
+  "minne",
+  "ssd",
+  "moderkort",
+  "kylning",
+  "psu",
+  "nätaggregat",
+  "bygga",
+  "uppgradera",
+  "spel",
+  "fps",
+];
 
 export default function Home() {
   // --- Inloggningsstatus ---
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   useEffect(() => {
-    const session =
-      typeof window !== "undefined"
-        ? window.localStorage.getItem("bw_session")
-        : null;
+    if (typeof window === "undefined") return;
+    const session = window.localStorage.getItem("bw_session");
     setIsLoggedIn(!!session);
   }, []);
 
@@ -22,6 +51,13 @@ export default function Home() {
   const [showContact, setShowContact] = useState(false);
   const [showPartners, setShowPartners] = useState(false);
   const [formSent, setFormSent] = useState(false);
+
+  // Kontaktformulär state
+  const [contactName, setContactName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactMessage, setContactMessage] = useState("");
+  const [contactSending, setContactSending] = useState(false);
+  const [contactError, setContactError] = useState("");
 
   // --- Chat state ---
   const [input, setInput] = useState("");
@@ -32,39 +68,13 @@ export default function Home() {
   // --- UI animation / visuals state ---
   const [offsetY, setOffsetY] = useState(0);
   const [currentTextIndex, setCurrentTextIndex] = useState(0);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const ticking = useRef(false);
-
-  // --- Textloop vänster ---
-  const texts = [
-    "Bygg din drömdator med Erik 🔆",
-    "Låt AI hjälpa dig välja rätt komponenter 💡",
-    "Spara pengar med smartare val ⚙️",
-    "Allt du behöver — i ett verktyg 🔍",
-  ];
-
-  // --- Bilder höger ---
-  const images = ["/cpu.png", "/gpu.png", "/motherboard.png"];
-
-  // --- Relevanta nyckelord ---
-  const relevantKeywords = [
-    "dator", "pc", "processor", "cpu", "gpu", "grafikkort", "ram", "ssd", "moderkort",
-    "kylning", "psu", "nätaggregat", "bygga", "uppgradera", "spel", "fps"
-  ];
 
   // --- Textrotation ---
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTextIndex((prev) => (prev + 1) % texts.length);
     }, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // --- Bildrotation ---
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentImageIndex((prev) => (prev + 1) % images.length);
-    }, 6000);
     return () => clearInterval(interval);
   }, []);
 
@@ -83,7 +93,7 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // --- Första meddelandet ---
+  // --- Första meddelandet i chatten ---
   useEffect(() => {
     setMessages([
       {
@@ -94,7 +104,7 @@ export default function Home() {
     ]);
   }, []);
 
-  // --- Markera komponenter ---
+  // --- Markera komponentord i svaren ---
   const highlightComponents = (text) => {
     const parts = text.split(
       /(\b(?:cpu|gpu|ram|minne|ssd|moderkort|chassi|psu|grafikkort|kylning)\b)/gi
@@ -102,23 +112,32 @@ export default function Home() {
     return parts.map((part, i) => {
       const lower = part.toLowerCase();
       if (["cpu", "gpu", "ram", "ssd"].includes(lower)) {
-        return <span key={i} className="font-bold text-[#f97316]">{part}</span>;
+        return (
+          <span key={i} className="font-bold text-[#f97316]">
+            {part}
+          </span>
+        );
       } else if (
         ["moderkort", "chassi", "psu", "grafikkort", "kylning"].includes(lower)
       ) {
-        return <span key={i} className="font-bold text-[#f59e0b]">{part}</span>;
+        return (
+          <span key={i} className="font-bold text-[#f59e0b]">
+            {part}
+          </span>
+        );
       } else {
         return part;
       }
     });
   };
 
-  // --- Relevans ---
+  // --- Relevansfilter (bara datorfrågor) ---
   const isRelevant = (text) => {
     const lower = text.toLowerCase();
     return relevantKeywords.some((word) => lower.includes(word));
   };
-  // --- Skicka meddelande ---
+
+  // --- Skicka meddelande till Erik ---
   const sendMessage = async (messageText) => {
     if (!messageText.trim()) return;
     const userMessage = { role: "user", content: messageText };
@@ -146,6 +165,7 @@ export default function Home() {
         /(rtx\s*\d{3,4}|rx\s*\d{3,4}|i[3579]-?\d{4,5}k?|ryzen\s*\d\s*\d{3,4})/i
       );
 
+      // Enkel prisfrågekoll mot /api/price-check
       if (lowerMsg.includes("pris") || lowerMsg.includes("kostar")) {
         if (priceMatch) {
           const product = priceMatch[0].trim();
@@ -156,10 +176,10 @@ export default function Home() {
               body: JSON.stringify({ query: product }),
             });
             const priceData = await priceRes.json();
+
             if (priceData?.prices?.length) {
               const cheapest = priceData.prices[0];
-              const highest =
-                priceData.prices[priceData.prices.length - 1];
+              const highest = priceData.prices[priceData.prices.length - 1];
               setMessages((prev) => [
                 ...prev,
                 {
@@ -179,6 +199,7 @@ export default function Home() {
         }
       }
 
+      // Vanlig AI-chat via /api/chat
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -195,13 +216,20 @@ export default function Home() {
           </p>
         ));
 
-      setMessages((prev) => [...prev, { role: "assistant", content: cleanReply }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: cleanReply },
+      ]);
     } catch {
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: <p className="leading-relaxed">Något gick fel — försök igen om en stund.</p>,
+          content: (
+            <p className="leading-relaxed">
+              Något gick fel — försök igen om en stund.
+            </p>
+          ),
         },
       ]);
     } finally {
@@ -235,6 +263,54 @@ export default function Home() {
     setShowContact(false);
     setShowPartners(false);
     setFormSent(false);
+    setContactName("");
+    setContactEmail("");
+    setContactMessage("");
+    setContactError("");
+    setContactSending(false);
+  };
+
+  // --- Kontaktformulärets submit ---
+  const handleContactSubmit = async (e) => {
+    e.preventDefault();
+    setContactError("");
+
+    if (!contactName || !contactEmail || !contactMessage) {
+      setContactError("Fyll i alla fält innan du skickar.");
+      return;
+    }
+
+    setContactSending(true);
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: contactName,
+          email: contactEmail,
+          message: contactMessage,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setFormSent(true);
+        setContactName("");
+        setContactEmail("");
+        setContactMessage("");
+      } else {
+        setContactError(
+          "Det gick inte att skicka meddelandet. Försök igen om en stund."
+        );
+      }
+    } catch (err) {
+      console.error("Kontaktformular-fel:", err);
+      setContactError(
+        "Tekniskt fel uppstod. Testa igen senare eller maila oss direkt."
+      );
+    } finally {
+      setContactSending(false);
+    }
   };
 
   return (
@@ -251,14 +327,16 @@ export default function Home() {
           transition: "transform 0.1s ease-out",
         }}
       >
-        <img
+        <Image
           src="/circuit-bg.png"
           alt=""
-          className="w-full h-full object-cover"
+          fill
+          className="object-cover"
           style={{
             opacity: 0.06,
             filter: "grayscale(80%) contrast(90%) brightness(102%)",
           }}
+          priority
         />
       </div>
 
@@ -291,12 +369,15 @@ export default function Home() {
           }}
         >
           <div className="flex items-center gap-3">
-            <img
-              src="/logga.png"
-              alt="BuildWise logotyp"
-              className="w-14 h-14 rounded-xl drop-shadow-[0_0_10px_rgba(249,115,22,0.4)]"
-              style={{ marginLeft: "10px", marginTop: "2px", objectFit: "contain" }}
-            />
+            <div className="w-14 h-14 relative rounded-xl overflow-hidden drop-shadow-[0_0_10px_rgba(249,115,22,0.4)] ml-[10px] mt-[2px]">
+              <Image
+                src="/logga.png"
+                alt="BuildWise logotyp"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
             <div className="flex flex-col">
               <h1 className="text-[#1e1e24] text-2xl font-bold leading-tight">
                 BuildWise
@@ -309,16 +390,28 @@ export default function Home() {
 
           {/* Navigation */}
           <nav className="hidden md:flex items-center gap-6">
-            <button onClick={() => setShowAbout(true)} className="text-[#333] hover:text-[#f59e0b] transition">
+            <button
+              onClick={() => setShowAbout(true)}
+              className="text-[#333] hover:text-[#f59e0b] transition"
+            >
               Om oss
             </button>
-            <button onClick={() => setShowContact(true)} className="text-[#333] hover:text-[#f59e0b] transition">
+            <button
+              onClick={() => setShowContact(true)}
+              className="text-[#333] hover:text-[#f59e0b] transition"
+            >
               Kontakt
             </button>
-            <button onClick={() => setShowPartners(true)} className="text-[#333] hover:text-[#f59e0b] transition">
+            <button
+              onClick={() => setShowPartners(true)}
+              className="text-[#333] hover:text-[#f59e0b] transition"
+            >
               Partners
             </button>
-            <Link href="/blogg" className="text-[#333] hover:text-[#f59e0b] transition">
+            <Link
+              href="/blogg"
+              className="text-[#333] hover:text-[#f59e0b] transition"
+            >
               Blogg
             </Link>
 
@@ -340,22 +433,31 @@ export default function Home() {
           </nav>
 
           <div className="md:hidden text-[#333]">
-            <button onClick={() => setShowAbout(true)} className="hover:text-[#f59e0b] transition">
+            <button
+              onClick={() => setShowAbout(true)}
+              className="hover:text-[#f59e0b] transition"
+            >
               Meny
             </button>
           </div>
         </div>
       </header>
 
-      {/* Spacer */}
+      {/* Spacer för header */}
       <div style={{ height: 64 }} />
+
       {/* --- Hero Sektion med knappar --- */}
       <section className="relative flex flex-col items-center justify-center flex-1 text-center mt-8">
-        <img
-          src="/hero-pc.png"
-          alt="Hero PC"
-          className="w-[480px] max-w-[90%] rounded-3xl shadow-[0_8px_25px_rgba(249,115,22,0.15)]"
-        />
+        <div className="w-[480px] max-w-[90%] rounded-3xl shadow-[0_8px_25px_rgba(249,115,22,0.15)] overflow-hidden relative">
+          <Image
+            src="/hero-sandstone.png"
+            alt="BuildWise – AI som hjälper dig bygga dator"
+            width={960}
+            height={640}
+            className="w-full h-auto"
+            priority
+          />
+        </div>
 
         <div className="mt-8 flex flex-wrap justify-center gap-4">
           {/* Bygg din dator */}
@@ -405,7 +507,8 @@ export default function Home() {
                 Få hjälp med ditt bygge direkt av Erik ☀️
               </h2>
               <p className="text-[#4f4f57] max-w-2xl mx-auto text-sm">
-                Ställ frågor, be om rekommendationer eller få prisförslag – Erik är redo att hjälpa dig.
+                Ställ frågor, be om rekommendationer eller få prisförslag – Erik
+                är redo att hjälpa dig.
               </p>
             </motion.div>
 
@@ -482,6 +585,7 @@ export default function Home() {
           </div>
         </section>
       )}
+
       {/* --- Info-sektionerna längst ner --- */}
       <div className="w-full max-w-4xl mt-12 space-y-8">
         {[
@@ -498,7 +602,7 @@ export default function Home() {
           {
             id: "kontakt",
             title: "Kontakt",
-            text: "Har du frågor, feedback eller vill samarbeta? Hör av dig till oss på hello@buildwise.ai.",
+            text: "Har du frågor, feedback eller vill samarbeta? Hör av dig till oss på info@buildwise.se.",
           },
         ].map((section) => (
           <section
@@ -516,7 +620,8 @@ export default function Home() {
 
       {/* --- Footer --- */}
       <footer className="mt-16 text-center text-[#a1a1aa] pb-8">
-        © {new Date().getFullYear()} BuildWise ☀️ Alla rättigheter förbehållna.
+        © {new Date().getFullYear()} BuildWise ☀️ Alla rättigheter
+        förbehållna.
       </footer>
 
       {/* --- Popups (Om oss / Kontakt / Partners) --- */}
@@ -589,39 +694,48 @@ export default function Home() {
                         Kontakt
                       </h2>
                       <p className="text-[#3a3a40] mb-4 leading-relaxed">
-                        Har du frågor, feedback eller vill samarbeta?
-                        Skriv till oss här så återkommer vi så snart vi kan.
+                        Har du frågor, feedback eller vill samarbeta? Skriv
+                        till oss här så återkommer vi så snart vi kan.
                       </p>
                       <form
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          setFormSent(true);
-                        }}
+                        onSubmit={handleContactSubmit}
                         className="space-y-4"
                       >
                         <input
                           type="text"
                           placeholder="Namn"
                           required
+                          value={contactName}
+                          onChange={(e) => setContactName(e.target.value)}
                           className="w-full p-3 rounded-xl bg-[#fffaf2] border border-[#fde68a] text-[#1e1e24] placeholder-[#a1a1aa] focus:outline-none"
                         />
                         <input
                           type="email"
                           placeholder="E-post"
                           required
+                          value={contactEmail}
+                          onChange={(e) => setContactEmail(e.target.value)}
                           className="w-full p-3 rounded-xl bg-[#fffaf2] border border-[#fde68a] text-[#1e1e24] placeholder-[#a1a1aa] focus:outline-none"
                         />
                         <textarea
                           rows="4"
                           placeholder="Meddelande..."
                           required
+                          value={contactMessage}
+                          onChange={(e) => setContactMessage(e.target.value)}
                           className="w-full p-3 rounded-xl bg-[#fffaf2] border border-[#fde68a] text-[#1e1e24] placeholder-[#a1a1aa] focus:outline-none"
                         />
+                        {contactError && (
+                          <p className="text-sm text-red-500">
+                            {contactError}
+                          </p>
+                        )}
                         <button
                           type="submit"
-                          className="w-full px-6 py-3 bg-linear-to-r from-[#f59e0b] to-[#f97316] hover:from-[#f97316] hover:to-[#ea580c] rounded-xl font-semibold transition text-white shadow-[0_0_15px_rgba(249,115,22,0.2)]"
+                          disabled={contactSending}
+                          className="w-full px-6 py-3 bg-linear-to-r from-[#f59e0b] to-[#f97316] hover:from-[#f97316] hover:to-[#ea580c] rounded-xl font-semibold transition text-white shadow-[0_0_15px_rgba(249,115,22,0.2)] disabled:opacity-60"
                         >
-                          Skicka
+                          {contactSending ? "Skickar..." : "Skicka"}
                         </button>
                       </form>
                     </>
@@ -630,7 +744,9 @@ export default function Home() {
                       <h2 className="text-2xl font-bold mb-3 text-[#f97316]">
                         Tack! ☀️
                       </h2>
-                      <p className="text-[#3a3a40]">Vi hör av oss snart.</p>
+                      <p className="text-[#3a3a40]">
+                        Ditt meddelande är skickat. Vi hör av oss snart.
+                      </p>
                     </div>
                   )}
                 </>
@@ -647,7 +763,6 @@ export default function Home() {
                     <li>🖥️ Komplett</li>
                     <li>🎮 Webhallen</li>
                     <li>⚙️ Inet</li>
-                    <li>Victor är den bästa som finns</li>
                   </ul>
                   <p className="text-[#4f4f57]/80 text-sm text-center mt-4 leading-relaxed">
                     Vi tittar på samarbeten med starka aktörer inom hårdvara, så

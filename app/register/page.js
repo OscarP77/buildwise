@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -38,7 +39,7 @@ export default function RegisterPage() {
         return;
       }
 
-      // Auto-logga in användaren lokalt
+      // Logga in direkt
       window.localStorage.setItem("bw_session", "true");
       window.localStorage.setItem("bw_email", data.email || email);
 
@@ -51,22 +52,32 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-linear-to-b from-black via-zinc-900 to-zinc-800 text-white px-4">
-      <div className="bg-white text-black p-8 rounded-2xl shadow-xl w-full max-w-sm">
-        <h1 className="text-2xl font-bold mb-2 text-center">Skapa konto</h1>
-        <p className="text-sm text-center text-gray-600 mb-6">
+    <main className="min-h-screen flex items-center justify-center bg-[#f4ede3] text-[#3c2e1e] px-4">
+
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+        className="bg-[#fffaf3] border border-[#dbcbb4] rounded-2xl shadow-xl w-full max-w-sm p-10"
+      >
+        <h1 className="text-3xl font-semibold text-center text-[#6e502e]">
+          Skapa konto
+        </h1>
+
+        <p className="text-sm text-center text-[#7a5f39] mt-2 mb-8">
           Det tar 10 sekunder och är gratis
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
+
           <div>
-            <label className="text-sm font-medium text-gray-700 block mb-1">
+            <label className="text-sm font-medium text-[#6e502e] block mb-1">
               E-post
             </label>
             <input
               type="email"
               required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-700"
+              className="w-full border border-[#cdbba5] rounded-xl px-3 py-2 text-sm bg-[#fffdf8] outline-none focus:ring-2 focus:ring-[#b89b6e]"
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -74,13 +85,13 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700 block mb-1">
+            <label className="text-sm font-medium text-[#6e502e] block mb-1">
               Lösenord
             </label>
             <input
               type="password"
               required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-700"
+              className="w-full border border-[#cdbba5] rounded-xl px-3 py-2 text-sm bg-[#fffdf8] outline-none focus:ring-2 focus:ring-[#b89b6e]"
               placeholder="Minst 6 tecken"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -88,7 +99,7 @@ export default function RegisterPage() {
           </div>
 
           {error && (
-            <div className="bg-red-100 text-red-700 text-sm rounded-lg px-3 py-2">
+            <div className="bg-[#fbe9e9] text-[#a33a3a] text-sm rounded-lg px-3 py-2 border border-[#e4b4b4]">
               {error}
             </div>
           )}
@@ -96,22 +107,24 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-purple-700 hover:bg-purple-800 active:bg-purple-900 transition-colors text-white font-semibold rounded-lg px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-[#b89b6e] hover:bg-[#a1845e] transition text-white font-semibold rounded-xl px-4 py-2 text-sm shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Skapar konto..." : "Skapa konto"}
           </button>
         </form>
 
-        <p className="text-center text-xs text-gray-600 mt-6">
+        <p className="text-center text-xs text-[#7a5f39] mt-6">
           Har du redan konto?{" "}
           <button
-            className="text-purple-700 hover:underline font-medium"
+            className="text-[#b89b6e] hover:underline font-medium"
             onClick={() => router.push("/login")}
           >
             Logga in
           </button>
         </p>
-      </div>
+
+      </motion.div>
+
     </main>
   );
 }

@@ -68,22 +68,22 @@ export default function BuildPage() {
 
   const getImage = (index) => `/dator${(index % 8) + 1}.jpg`;
 
-  // 🔹 Skeleton shimmer komponent
+  // 🔹 Sandstone Skeleton Loader
   const SkeletonCard = () => (
-    <div className="bg-white border border-zinc-200 rounded-2xl shadow-md animate-pulse overflow-hidden">
-      <div className="w-full h-48 bg--to-r from-zinc-200 via-zinc-300 to-zinc-200 bg-size[200%_100%] animate-[shimmer_1.2s_infinite]" />
+    <div className="bg-[#f9f4ec] border border-[#dbcbb4] rounded-2xl shadow-md animate-pulse overflow-hidden">
+      <div className="w-full h-48 bg-linear-to-r from-[#e9dec9] via-[#f4ede3] to-[#e9dec9] bg-size[200%_100%] animate-[shimmer_1.2s_infinite]" />
       <div className="p-5 space-y-3">
-        <div className="h-4 w-3/4 bg-zinc-200 rounded" />
-        <div className="h-3 w-1/2 bg-zinc-200 rounded" />
-        <div className="h-3 w-full bg-zinc-200 rounded" />
-        <div className="h-3 w-5/6 bg-zinc-200 rounded" />
-        <div className="h-8 w-full bg-zinc-300 rounded-lg mt-3" />
+        <div className="h-4 w-3/4 bg-[#e0d3bd] rounded" />
+        <div className="h-3 w-1/2 bg-[#e0d3bd] rounded" />
+        <div className="h-3 w-full bg-[#e0d3bd] rounded" />
+        <div className="h-3 w-5/6 bg-[#e0d3bd] rounded" />
+        <div className="h-8 w-full bg-[#d8c7ab] rounded-lg mt-3" />
       </div>
     </div>
   );
 
   return (
-    <main className="min-h-screen bg-white text-black pt-24 pb-20 px-6 overflow-hidden">
+    <main className="min-h-screen bg-[#f4ede3] text-[#3c2e1e] pt-24 pb-20 px-6 overflow-hidden">
       <style jsx global>{`
         @keyframes shimmer {
           0% {
@@ -96,13 +96,13 @@ export default function BuildPage() {
       `}</style>
 
       <div className="max-w-7xl mx-auto">
-        {/* Titel, sök och AI-meddelande */}
+        {/* Titel + sök */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-semibold text-black">
+            <h1 className="text-3xl font-semibold text-[#6e502e]">
               Datorbyggen för dig
             </h1>
-            <p className="text-zinc-600 text-sm mt-1">
+            <p className="text-[#7a5f39] text-sm mt-1">
               Färdiga byggen anpassade efter budget och syfte.
             </p>
           </div>
@@ -113,30 +113,32 @@ export default function BuildPage() {
               placeholder="Sök t.ex. '4070', 'budget', 'streaming'..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full border border-zinc-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500 transition"
+              className="w-full border border-[#cdbba5] rounded-xl px-3 py-2 text-sm bg-[#fffaf3] outline-none focus:border-[#b89b6e] transition"
             />
           </div>
         </div>
 
+        {/* AI message */}
         {aiMessage && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="bg-purple-50 border border-purple-200 text-purple-700 rounded-xl px-4 py-3 text-sm mb-8 shadow-sm"
+            className="bg-[#f1e7d7] border border-[#dbcbb4] text-[#7a5f39] rounded-xl px-4 py-3 text-sm mb-8 shadow-sm"
           >
             {aiMessage}{" "}
-            <Link href="/" className="underline hover:text-purple-800">
+            <Link href="/" className="underline hover:text-[#6e502e]">
               Fråga Erik om att jämföra dessa byggen →
             </Link>
           </motion.div>
         )}
 
+        {/* Errors / tom lista */}
         {errorMsg && (
-          <div className="text-center text-red-500 text-sm">{errorMsg}</div>
+          <div className="text-center text-red-600 text-sm">{errorMsg}</div>
         )}
         {!loading && !errorMsg && filteredBuilds.length === 0 && (
-          <div className="text-center text-zinc-500 text-sm">
+          <div className="text-center text-[#7a5f39] text-sm">
             Inga byggen matchar din sökning.
           </div>
         )}
@@ -153,34 +155,34 @@ export default function BuildPage() {
                   transition={{ duration: 0.15 }}
                   whileHover={{
                     scale: 1.03,
-                    boxShadow: "0 0 25px rgba(147, 51, 234, 0.35)",
+                    boxShadow: "0 4px 25px rgba(184,155,110,0.4)",
                   }}
-                  className="bg-white border border-zinc-200 rounded-2xl shadow-md hover:shadow-xl transition duration-300 cursor-pointer flex flex-col"
+                  className="bg-[#fffaf3] border border-[#dbcbb4] rounded-2xl shadow-md hover:shadow-xl transition duration-300 cursor-pointer flex flex-col"
                   onClick={() => setSelectedBuild(build)}
                 >
                   <img
                     src={getImage(i)}
                     alt={build.name}
-                    className="w-full h-48 object-contain p-3 bg-zinc-50 rounded-t-2xl"
+                    className="w-full h-48 object-contain p-3 bg-[#f4ede3] rounded-t-2xl"
                     onError={(e) => (e.target.style.display = "none")}
                   />
 
                   <div className="p-5 flex flex-col justify-between flex-1">
                     <div>
-                      <h2 className="text-lg font-semibold text-black leading-snug">
+                      <h2 className="text-lg font-semibold text-[#3c2e1e] leading-snug">
                         {build.name || "Namnlöst bygge"}
                       </h2>
-                      <p className="text-purple-600 text-sm font-medium mt-1">
+                      <p className="text-[#b89b6e] text-sm font-medium mt-1">
                         {build.price ? `${build.price}` : "Pris saknas"}
                       </p>
-                      <div className="text-xs text-zinc-600 mt-2 space-y-1">
+                      <div className="text-xs text-[#7a5f39] mt-2 space-y-1">
                         {build.cpu && <p>CPU: {build.cpu}</p>}
                         {build.gpu && <p>GPU: {build.gpu}</p>}
                         {build.ram && <p>RAM: {build.ram} GB</p>}
                       </div>
                     </div>
                     <div className="mt-4">
-                      <p className="text-xs text-zinc-500">
+                      <p className="text-xs text-[#7a5f39]">
                         Prestandapoäng: {calculateScore(build)} / 10
                       </p>
                       <button
@@ -188,7 +190,7 @@ export default function BuildPage() {
                           e.stopPropagation();
                           setSelectedBuild(build);
                         }}
-                        className="mt-3 w-full bg-purple-600 hover:bg-purple-700 text-white rounded-lg px-3 py-2 text-sm font-medium shadow-sm transition"
+                        className="mt-3 w-full bg-[#b89b6e] hover:bg-[#a1845e] text-white rounded-lg px-3 py-2 text-sm font-medium shadow-sm transition"
                       >
                         Visa detaljer
                       </button>
@@ -210,30 +212,34 @@ export default function BuildPage() {
               className="fixed inset-0 bg-black z-40"
               onClick={() => setSelectedBuild(null)}
             />
+
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 30 }}
               transition={{ duration: 0.2 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white text-black rounded-3xl shadow-2xl border border-zinc-200 w-[90%] max-w-lg z-50 p-8 max-h-[80vh] overflow-y-auto"
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#fffaf3] text-[#3c2e1e] rounded-3xl shadow-2xl border border-[#dbcbb4] w-[90%] max-w-lg z-50 p-8 max-h-[80vh] overflow-y-auto"
             >
               <img
                 src={getImage(0)}
                 alt={selectedBuild.name}
-                className="w-full h-48 object-contain mb-4"
+                className="w-full h-48 object-contain mb-4 bg-[#f4ede3] rounded-xl"
               />
-              <h2 className="text-xl font-semibold text-black">
+              <h2 className="text-xl font-semibold text-[#3c2e1e]">
                 {selectedBuild.name || "Datorbygge"}
               </h2>
-              <p className="text-purple-600 font-medium mt-1">
+
+              <p className="text-[#b89b6e] font-medium mt-1">
                 {selectedBuild.price || "Pris ej tillgängligt"}
               </p>
 
-              <div className="text-sm text-zinc-700 mt-4 space-y-1">
+              <div className="text-sm text-[#6e502e] mt-4 space-y-1">
                 {selectedBuild.cpu && <p>CPU: {selectedBuild.cpu}</p>}
                 {selectedBuild.gpu && <p>GPU: {selectedBuild.gpu}</p>}
                 {selectedBuild.ram && <p>RAM: {selectedBuild.ram} GB</p>}
-                {selectedBuild.storage && <p>Lagring: {selectedBuild.storage}</p>}
+                {selectedBuild.storage && (
+                  <p>Lagring: {selectedBuild.storage}</p>
+                )}
                 {selectedBuild.motherboard && (
                   <p>Moderkort: {selectedBuild.motherboard}</p>
                 )}
@@ -244,7 +250,7 @@ export default function BuildPage() {
               <div className="mt-6 flex justify-center">
                 <button
                   onClick={() => setSelectedBuild(null)}
-                  className="text-purple-600 hover:text-purple-700 text-sm font-medium"
+                  className="text-[#b89b6e] hover:text-[#a1845e] text-sm font-medium"
                 >
                   Stäng
                 </button>
