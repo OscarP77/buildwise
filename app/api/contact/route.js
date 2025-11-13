@@ -1,5 +1,3 @@
-export const runtime = "nodejs";  // <-- VIKTIGT
-
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 
@@ -14,7 +12,23 @@ export async function POST(req) {
       );
     }
 
-    // SMTP via STRATO
+    // --- Hämta extra metadata för spam-skydd ---
+    const headers = req.headers;
+
+    const ip =
+      headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      headers.get("x-real-ip") ||
+      "Unknown";
+
+    const userAgent = headers.get("user-agent") || "Unknown device";
+
+    const referer = headers.get("referer") || "No referer";
+
+    const timestamp = new Date().toLocaleString("sv-SE", {
+      timeZone: "Europe/Stockholm",
+    });
+
+    // --- SMTP STRATO ---
     const transporter = nodemailer.createTransport({
       host: "smtp.strato.com",
       port: 465,
@@ -25,16 +39,29 @@ export async function POST(req) {
       },
     });
 
+    // --- MAIL SOM SKICKAS TILL DIG ---
     await transporter.sendMail({
       from: `"BuildWise Kontakt" <${process.env.EMAIL_USER}>`,
       to: process.env.EMAIL_USER,
-      subject: "Nytt kontaktformulär från BuildWise",
+      subject: "📩 Ny kontaktförfrågan via BuildWise",
       text: `
-Namn: ${name}
-E-post: ${email}
+En användare har skickat ett meddelande via kontaktformuläret:
 
-Meddelande:
+──────────────
+👤 Namn: ${name}
+📧 E-post: ${email}
+📅 Tid: ${timestamp}
+
+💬 Meddelande:
 ${message}
+
+──────────────
+📌 TECHNICAL INFO (Anti-spam log):
+IP-address: ${ip}
+Device/User-Agent: ${userAgent}
+Referer: ${referer}
+
+──────────────
       `,
       replyTo: email,
     });
