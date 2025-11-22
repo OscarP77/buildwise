@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Inter } from "next/font/google";
 import Link from "next/link";
@@ -69,9 +69,7 @@ export default function Home() {
   const [started, setStarted] = useState(false);
 
   // --- UI state ---
-  const [offsetY, setOffsetY] = useState(0);
   const [currentTextIndex, setCurrentTextIndex] = useState(0);
-  const ticking = useRef(false);
 
   // --- Textrotation ---
   useEffect(() => {
@@ -79,21 +77,6 @@ export default function Home() {
       setCurrentTextIndex((prev) => (prev + 1) % texts.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
-
-  // --- Parallax ---
-  useEffect(() => {
-    const handleScroll = () => {
-      if (!ticking.current) {
-        window.requestAnimationFrame(() => {
-          setOffsetY(window.scrollY);
-          ticking.current = false;
-        });
-        ticking.current = true;
-      }
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   // --- Första meddelande ---
@@ -326,14 +309,10 @@ export default function Home() {
       className={`${inter.className} min-h-screen text-[#1e1e24] flex flex-col items-center p-4 relative overflow-x-hidden`}
       style={{ background: "#ffffff" }}
     >
-      {/* --- Bakgrund --- */}
+      {/* --- Stillastående bakgrund --- */}
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 will-change-transform"
-        style={{
-          transform: `translate3d(0, ${offsetY * 0.15}px, 0)`,
-          transition: "transform 0.1s ease-out",
-        }}
+        className="pointer-events-none fixed inset-0 -z-10"
       >
         <Image
           src="/circuit-bg.png"
@@ -367,7 +346,7 @@ export default function Home() {
       </AnimatePresence>
 
       {/* --- Header --- */}
-      <header className="fixed top-1 left-0 right-0 z-50">
+      <header className="fixed top-0 left-0 right-0 z-50">
         <div
           className="w-full flex items-center justify-between px-6 h-16 border-b border-[#fcd34d]"
           style={{
@@ -628,8 +607,23 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="mt-16 text-center text-[#a1a1aa] pb-8">
-        © {new Date().getFullYear()} BuildWise ☀️ Alla rättigheter förbehållna.
-      </footer>
+  <p className="text-sm text-[#6b7280] mb-1">
+    BuildWise hjälper dig att planera, uppgradera och skapa datorbyggen med hjälp av AI.
+  </p>
+
+  <p className="text-xs text-[#9ca3af] mb-1">
+    <Link
+      href="/integritet"
+      className="underline underline-offset-2 hover:text-[#f97316]"
+    >
+      Integritet & cookies
+    </Link>
+  </p>
+
+  <p>
+    © {new Date().getFullYear()} BuildWise ☀️ Alla rättigheter förbehållna.
+  </p>
+</footer>
 
       {/* ✅ BETA-POPUP */}
       {showBetaPopup && (
