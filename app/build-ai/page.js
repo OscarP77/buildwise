@@ -23,8 +23,19 @@ export default function BuildAIPage() {
   const [chatInput, setChatInput] = useState("");
   const [sending, setSending] = useState(false);
   const [messages, setMessages] = useState([
-    { from: "erik", text: "Hej! Jag heter Erik ☀️ Vad vill du ha hjälp med i datorbygget?" },
+    {
+      from: "erik",
+      text:
+        "Hej! Jag är Erik 👋\n\n" +
+        "Jag hjälper dig att uppgradera din dator – mer FPS, bättre flyt och rätt delar för pengarna 🔧🚀\n\n" +
+        "Berätta kort vad du har idag (t.ex. CPU/grafikkort eller bara 'gammal gamingdator')\n" +
+        "och vad du vill förbättra (t.ex. CS2, Fortnite, redigering, streaming).",
+    },
   ]);
+
+  // FPS & spara
+  const [showFps, setShowFps] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
 
   // --- Kalkyler ---
   const totalPower = useMemo(() => {
@@ -55,12 +66,20 @@ export default function BuildAIPage() {
     return "Kompatibilitet ännu ej kontrollerad ⚙️";
   }, [build]);
 
+  // --- FPS-tabell baserad på GPU ---
+  const fpsRows = useMemo(() => {
+    if (!build.gpu) return null;
+    const tier = getGpuTier(build.gpu.name);
+    const profile = FPS_PROFILES[tier] || FPS_PROFILES.mid;
+    return Object.entries(profile).map(([game, fps]) => ({ game, fps }));
+  }, [build.gpu]);
 
-  // ✅ NY SENDCHAT — HELT FIXAD
-  async function sendChat() {
-    if (!chatInput.trim() || sending) return;
+  // ✅ SENDCHAT
+  async function sendChat(overrideText) {
+    const textToSend = (overrideText ?? chatInput).trim();
+    if (!textToSend || sending) return;
 
-    const userMsg = { from: "user", text: chatInput.trim() };
+    const userMsg = { from: "user", text: textToSend };
     const newMessages = [...messages, userMsg];
 
     setMessages(newMessages);
@@ -80,10 +99,34 @@ export default function BuildAIPage() {
     } catch {
       setMessages((m) => [
         ...m,
-        { from: "erik", text: "Något gick fel – försök igen om en stund 🙏" },
+        {
+          from: "erik",
+          text: "Något gick fel – försök igen om en stund 🙏",
+        },
       ]);
     } finally {
       setSending(false);
+    }
+  }
+
+  // ✅ Spara bygget lokalt
+  function handleSaveBuild() {
+    try {
+      if (typeof window === "undefined") return;
+      const payload = {
+        build,
+        savedAt: new Date().toISOString(),
+      };
+      const existingRaw = window.localStorage.getItem("bw_saved_builds");
+      const existing = existingRaw ? JSON.parse(existingRaw) : [];
+      existing.push(payload);
+      window.localStorage.setItem("bw_saved_builds", JSON.stringify(existing));
+      setSaveMessage("Bygget sparades på den här enheten ✅");
+      setTimeout(() => setSaveMessage(""), 4000);
+    } catch (err) {
+      console.error("Could not save build:", err);
+      setSaveMessage("Kunde inte spara bygget just nu ❌");
+      setTimeout(() => setSaveMessage(""), 4000);
     }
   }
 
@@ -103,9 +146,7 @@ export default function BuildAIPage() {
 
   return (
     <main className="min-h-screen bg-[#f4ede3] text-[#3c2e1e] pt-24 pb-20 px-4 md:px-8">
-
       <div className="max-w-7xl mx-auto border border-[#dbcbb4] rounded-2xl bg-[#f9f4ec] shadow-lg flex flex-col md:flex-row overflow-hidden">
-
         {/* SIDOMENY */}
         <aside className="w-full md:w-64 border-b md:border-r border-[#dbcbb4] p-5 bg-[#f1e7d7]">
           <h2 className="text-xs font-semibold text-[#7a5f39] uppercase mb-4 tracking-wide">
@@ -129,7 +170,9 @@ export default function BuildAIPage() {
           </div>
 
           <div className="mt-8">
-            <p className="text-[11px] text-[#7a5f39] mb-2 uppercase tracking-wide">Ditt bygge</p>
+            <p className="text-[11px] text-[#7a5f39] mb-2 uppercase tracking-wide">
+              Ditt bygge
+            </p>
             <ul className="text-[12px] text-[#6e502e] space-y-1">
               {categories.map((c) => (
                 <li key={c.key}>
@@ -142,18 +185,47 @@ export default function BuildAIPage() {
 
         {/* HUVUDDEL */}
         <section className="flex-1 p-6 flex flex-col gap-6 bg-[#f9f4ec]">
-
           {/* Info paneler */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <InfoBox title="Totalt pris" value={totalPrice} color="gold" />
-            <InfoBox title="Total strömförsörjning" value={totalPower} color="sand" />
-            <InfoBox title="Prestandapoäng" value={performanceScore} color="green" />
-            <InfoBox title="Kompatibilitet" value={compatibilityStatus} color="brown" />
+            <InfoBox
+              title="Total strömförsörjning"
+              value={totalPower}
+              color="sand"
+            />
+            <InfoBox
+              title="Prestandapoäng"
+              value={performanceScore}
+              color="green"
+            />
+            <InfoBox
+              title="Kompatibilitet"
+              value={compatibilityStatus}
+              color="brown"
+            />
+          </div>
+
+          {/* Rad med funktion-knappar */}
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            <button
+              onClick={() => setShowFps((v) => !v)}
+              className="px-4 py-2 rounded-lg border border-[#b89b6e] bg-[#f4ede3] text-sm font-medium hover:border-[#a1845e]"
+            >
+              🎮 Visa FPS i spel
+            </button>
+            <button
+              onClick={handleSaveBuild}
+              className="px-4 py-2 rounded-lg border border-[#a3d9a5] bg-[#e9f9ea] text-sm font-medium text-green-800 hover:border-[#6fbf73]"
+            >
+              💾 Spara bygget
+            </button>
+            {saveMessage && (
+              <span className="text-xs text-[#166534]">{saveMessage}</span>
+            )}
           </div>
 
           {/* Aktiv komponent */}
           <div className="rounded-xl border border-[#dbcbb4] bg-[#f4ede3] p-6 overflow-y-auto min-h-[300px] max-h-[60vh]">
-
             {!build[activeCategory] ? (
               <div>
                 <h3 className="text-base font-semibold text-[#3c2e1e] mb-2">
@@ -180,7 +252,9 @@ export default function BuildAIPage() {
                       <p className="text-sm font-semibold text-[#3c2e1e]">
                         {demoName(activeCategory, n)}
                       </p>
-                      <p className="text-[#b89b6e] text-[12px] font-medium">{demoPrice(activeCategory, n)} kr</p>
+                      <p className="text-[#b89b6e] text-[12px] font-medium">
+                        {demoPrice(activeCategory, n)} kr
+                      </p>
                     </motion.button>
                   ))}
                 </div>
@@ -192,13 +266,19 @@ export default function BuildAIPage() {
                 </h3>
 
                 <div className="rounded-lg border border-[#a3d9a5] bg-[#e9f9ea] p-4">
-                  <p className="font-semibold">{build[activeCategory]?.name}</p>
-                  <p className="text-green-700">{build[activeCategory]?.price} kr</p>
+                  <p className="font-semibold">
+                    {build[activeCategory]?.name}
+                  </p>
+                  <p className="text-green-700">
+                    {build[activeCategory]?.price} kr
+                  </p>
                 </div>
 
                 <div className="mt-4 flex gap-3">
                   <button
-                    onClick={() => setBuild((b) => ({ ...b, [activeCategory]: null }))}
+                    onClick={() =>
+                      setBuild((b) => ({ ...b, [activeCategory]: null }))
+                    }
                     className="px-3 py-2 rounded-lg border border-[#e3b2b2] text-[#a54c4c] bg-[#fbecec]"
                   >
                     Ta bort
@@ -208,13 +288,55 @@ export default function BuildAIPage() {
                     onClick={() => setShowChat(true)}
                     className="px-3 py-2 rounded-lg border border-[#b89b6e] bg-[#f4ede3]"
                   >
-                    Be Erik om nya alternativ
+                    Fråga Erik om uppgradering
                   </button>
                 </div>
               </div>
             )}
-
           </div>
+
+          {/* FPS-panel */}
+          {showFps && (
+            <div className="rounded-xl border border-[#dbcbb4] bg-[#f9f4ec] p-6">
+              <h3 className="text-base font-semibold mb-2">
+                Ungefärlig FPS i populära spel (1080p)
+              </h3>
+              {!build.gpu ? (
+                <p className="text-sm text-[#6e502e]">
+                  Välj ett grafikkort först så kan vi uppskatta din FPS i olika spel.
+                </p>
+              ) : (
+                <>
+                  <p className="text-xs text-[#7a5f39] mb-3">
+                    Baserat på ditt valda grafikkort ({build.gpu.name}) och en
+                    normal spel-CPU. Siffrorna är uppskattningar – verklig FPS kan
+                    skilja sig beroende på inställningar.
+                  </p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-[11px] uppercase tracking-wide text-[#7a5f39] border-b border-[#dbcbb4]">
+                          <th className="py-1 pr-2">Spel</th>
+                          <th className="py-1">Uppskattad FPS</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {fpsRows?.map((row) => (
+                          <tr
+                            key={row.game}
+                            className="border-b border-[#f1e7d7] last:border-0"
+                          >
+                            <td className="py-1 pr-2">{row.game}</td>
+                            <td className="py-1">{row.fps}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </section>
       </div>
 
@@ -223,7 +345,7 @@ export default function BuildAIPage() {
         onClick={() => setShowChat(!showChat)}
         className="fixed bottom-6 right-6 bg-[#b89b6e] text-white rounded-full px-5 py-3 shadow-xl"
       >
-        💬 Fråga Erik om hjälp
+        💬 Fråga Erik om uppgradering
       </button>
 
       {/* CHAT BOX */}
@@ -236,7 +358,7 @@ export default function BuildAIPage() {
             className="fixed bottom-20 right-6 w-80 bg-[#fffaf3] border border-[#dbcbb4] shadow-2xl rounded-2xl flex flex-col"
           >
             <div className="bg-[#b89b6e] text-white px-4 py-2 text-sm font-semibold flex justify-between">
-              <span>Erik – din AI-assistent 🤖</span>
+              <span>Erik – uppgraderings-expert 🤖</span>
               <button onClick={() => setShowChat(false)}>✕</button>
             </div>
 
@@ -244,7 +366,7 @@ export default function BuildAIPage() {
               {messages.map((m, i) => (
                 <div
                   key={i}
-                  className={`px-3 py-2 rounded-lg max-w-[80%] ${
+                  className={`px-3 py-2 rounded-lg max-w-[80%] whitespace-pre-line ${
                     m.from === "erik"
                       ? "bg-[#eadfcf] text-[#6e502e]"
                       : "bg-[#d6c7b3] text-[#3c2e1e] self-end"
@@ -266,12 +388,12 @@ export default function BuildAIPage() {
                 type="text"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Ställ en fråga..."
-                className="flex-1 text-sm border border-[#cdbba5] rounded-lg px-2 py-1 bg-white/80"
+                placeholder="Ex: 'Vad kan jag uppgradera för mer FPS?'"
+                className="flex-1 text-sm border border-[#cdbba5] rounded-lg px-2 py-1 bg:white/80"
                 onKeyDown={(e) => e.key === "Enter" && sendChat()}
               />
               <button
-                onClick={sendChat}
+                onClick={() => sendChat()}
                 disabled={sending}
                 className="bg-[#b89b6e] text-white rounded-lg px-3"
               >
@@ -281,7 +403,6 @@ export default function BuildAIPage() {
           </motion.div>
         )}
       </AnimatePresence>
-
     </main>
   );
 }
@@ -357,4 +478,72 @@ function demoPrice(cat, n) {
     os: [1390, 1290, 0],
   };
   return data[cat]?.[n - 1] || 0;
+}
+
+// --- FPS-profiler & GPU-tiering ---
+// Väääääldigt förenklade uppskattningar för 1080p high.
+const FPS_PROFILES = {
+  high: {
+    "CS2": "260–320 FPS",
+    "Valorant": "280–340 FPS",
+    "Fortnite": "190–230 FPS",
+    "Warzone": "110–140 FPS",
+    "GTA V": "160–190 FPS",
+    "Cyberpunk 2077": "70–100 FPS",
+    "Elden Ring": "90–120 FPS",
+    "League of Legends": "260–300 FPS",
+    "Apex Legends": "160–200 FPS",
+    "Rainbow Six Siege": "220–260 FPS",
+    "Minecraft (Java, shaders)": "120–160 FPS",
+    "Rocket League": "220–260 FPS",
+    "Starfield": "60–80 FPS",
+    "Overwatch 2": "190–230 FPS",
+    "Hogwarts Legacy": "80–110 FPS",
+  },
+  mid: {
+    "CS2": "200–240 FPS",
+    "Valorant": "220–260 FPS",
+    "Fortnite": "150–190 FPS",
+    "Warzone": "85–110 FPS",
+    "GTA V": "130–170 FPS",
+    "Cyberpunk 2077": "55–75 FPS",
+    "Elden Ring": "75–100 FPS",
+    "League of Legends": "220–260 FPS",
+    "Apex Legends": "130–170 FPS",
+    "Rainbow Six Siege": "190–230 FPS",
+    "Minecraft (Java, shaders)": "90–130 FPS",
+    "Rocket League": "190–230 FPS",
+    "Starfield": "45–65 FPS",
+    "Overwatch 2": "160–200 FPS",
+    "Hogwarts Legacy": "65–90 FPS",
+  },
+  entry: {
+    "CS2": "140–180 FPS",
+    "Valorant": "170–210 FPS",
+    "Fortnite": "110–150 FPS",
+    "Warzone": "60–80 FPS",
+    "GTA V": "100–130 FPS",
+    "Cyberpunk 2077": "35–55 FPS",
+    "Elden Ring": "55–75 FPS",
+    "League of Legends": "180–220 FPS",
+    "Apex Legends": "100–130 FPS",
+    "Rainbow Six Siege": "150–190 FPS",
+    "Minecraft (Java, shaders)": "70–100 FPS",
+    "Rocket League": "150–190 FPS",
+    "Starfield": "35–50 FPS",
+    "Overwatch 2": "120–160 FPS",
+    "Hogwarts Legacy": "45–65 FPS",
+  },
+};
+
+function getGpuTier(gpuName) {
+  const name = (gpuName || "").toLowerCase();
+  if (!name) return "entry";
+
+  // Enkla matchningar för våra demo-GPU:er
+  if (name.includes("4070") || name.includes("7800")) return "high";
+  if (name.includes("4060")) return "mid";
+
+  // default
+  return "mid";
 }

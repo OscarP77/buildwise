@@ -52,6 +52,9 @@ export default function Home() {
   const [showPartners, setShowPartners] = useState(false);
   const [formSent, setFormSent] = useState(false);
 
+  // ✅ Beta-popup state
+  const [showBetaPopup, setShowBetaPopup] = useState(true);
+
   // Kontaktformulär state
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
@@ -99,7 +102,10 @@ export default function Home() {
       {
         role: "assistant",
         content:
-          "Hej! Jag heter Erik ☀️ Jag hjälper dig bygga, uppgradera eller förstå din dator — vad vill du börja med?",
+          "Hej! Jag är Erik 👋\n\n" +
+          "Jag hjälper dig att uppgradera din dator – mer FPS, bättre flyt och rätt delar för pengarna 🔧🚀\n\n" +
+          "Berätta kort vad du har idag (t.ex. CPU/grafikkort eller bara 'gammal gamingdator')\n" +
+          "och vad du vill förbättra (t.ex. CS2, Fortnite, redigering, streaming).",
       },
     ]);
   }, []);
@@ -244,6 +250,7 @@ export default function Home() {
       sendMessage(input);
     }
   };
+
   // --- Popup-animationer ---
   const backdropVariants = {
     hidden: { opacity: 0 },
@@ -450,6 +457,7 @@ export default function Home() {
 
       {/* Spacer för header */}
       <div style={{ height: 64 }} />
+
       {/* --- Hero Sektion med knappar --- */}
       <section className="relative flex flex-col items-center justify-center flex-1 text-center mt-8">
         <div className="w-[480px] max-w-[90%] rounded-3xl shadow-[0_8px_25px_rgba(249,115,22,0.15)] overflow-hidden relative">
@@ -505,11 +513,11 @@ export default function Home() {
               className="bg-[#fff9f2] border border-[#fde68a] rounded-t-3xl p-5 text-center shadow-[0_4px_15px_rgba(249,115,22,0.1)]"
             >
               <h2 className="text-3xl font-bold mb-2 text-[#1e1e24]">
-                Få hjälp med ditt bygge direkt av Erik ☀️
+                Få hjälp med uppgradering direkt av Erik ☀️
               </h2>
               <p className="text-[#4f4f57] max-w-2xl mx-auto text-sm">
-                Ställ frågor, be om rekommendationer eller få prisförslag – Erik
-                är redo att hjälpa dig.
+                Beskriv din nuvarande dator och vad du vill förbättra – Erik hjälper dig
+                att välja rätt uppgraderingar.
               </p>
             </motion.div>
 
@@ -570,7 +578,7 @@ export default function Home() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Skriv något till Erik..."
+                  placeholder="Ex: 'Jag har Ryzen 5 3600 och GTX 1060 och vill ha mer FPS i CS2'"
                   rows="1"
                   className="flex-1 p-3 bg-white border border-[#fcd34d] rounded-xl text-[#1e1e24] placeholder-[#a1a1aa] focus:outline-none focus:ring-2 focus:ring-[#fbbf24]/40 resize-none"
                 />
@@ -622,6 +630,34 @@ export default function Home() {
       <footer className="mt-16 text-center text-[#a1a1aa] pb-8">
         © {new Date().getFullYear()} BuildWise ☀️ Alla rättigheter förbehållna.
       </footer>
+
+      {/* ✅ BETA-POPUP */}
+      {showBetaPopup && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-60 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-[#f9f4ec] border border-[#dbcbb4] shadow-2xl p-5">
+            <h2 className="text-lg font-semibold text-[#3c2e1e] mb-2">
+              BuildWise är i beta 🚧
+            </h2>
+            <p className="text-sm text-[#5b4226] mb-3">
+              Vi är mitt i vår beta-lansering och finslipar fortfarande tjänsten.
+              Om du märker något som inte fungerar som det ska, eller har idéer
+              på förbättringar, får du jättegärna höra av dig 🙏
+            </p>
+            <p className="text-xs text-[#7a5f39] mb-4">
+              Kontakt: <span className="font-medium">info@buildwise.se</span>
+            </p>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowBetaPopup(false)}
+                className="px-4 py-2 text-sm rounded-lg border border-[#cdbba5] bg-white hover:bg-[#f4ede3] text-[#3c2e1e]"
+              >
+                Okej, jag fattar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* --- Popups (Om oss / Kontakt / Partners) --- */}
       <AnimatePresence>
         {(showAbout || showContact || showPartners) && (
@@ -651,7 +687,9 @@ export default function Home() {
               {/* --- OM OSS POPUP --- */}
               {showAbout && (
                 <>
-                  <h2 className="text-2xl font-bold mb-4 text-[#f97316]">Om oss</h2>
+                  <h2 className="text-2xl font-bold mb-4 text-[#f97316]">
+                    Om oss
+                  </h2>
                   <p className="text-[#3a3a40] leading-relaxed">
                     BuildWise startades av <strong>Oscar Petersson</strong> och{" "}
                     <strong>Victor Rosengren</strong>. Idén kom när Oscar försökte
@@ -674,7 +712,9 @@ export default function Home() {
                 <>
                   {!formSent ? (
                     <>
-                      <h2 className="text-2xl font-bold mb-4 text-[#f97316]">Kontakt</h2>
+                      <h2 className="text-2xl font-bold mb-4 text-[#f97316]">
+                        Kontakt
+                      </h2>
                       <p className="text-[#3a3a40] mb-4">
                         Har du frågor? Skriv till oss här 👇
                       </p>
